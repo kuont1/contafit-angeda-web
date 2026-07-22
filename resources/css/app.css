@@ -1,0 +1,59 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+html,
+body {
+    min-height: 100%;
+}
+
+body {
+    margin: 0;
+}
+
+.dashboard-page {
+    background:
+        radial-gradient(circle at top left, rgba(108, 167, 255, 0.18), transparent 32%),
+        radial-gradient(circle at top right, rgba(255, 200, 87, 0.12), transparent 28%),
+        linear-gradient(180deg, #070a10 0%, #0b0f16 45%, #090c12 100%);
+}
+
+.dashboard-shell {
+    position: relative;
+}
+
+.dashboard-shell::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    background-size: 38px 38px;
+    mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.8), transparent 85%);
+}
+
+.dashboard-grid,
+.dashboard-sidebar,
+.dashboard-main {
+    position: relative;
+    z-index: 1;
+}
+
+.calendar-cell {
+    transition: transform 180ms ease, background-color 180ms ease, border-color 180ms ease;
+}
+
+.calendar-cell:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.18);
+    background-color: rgba(255, 255, 255, 0.08);
+}
