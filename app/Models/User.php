@@ -22,6 +22,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'show_holidays',
     ];
 
     /**
@@ -43,7 +44,13 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'show_holidays' => 'boolean',
             'password' => 'hashed',
         ];
+    }
+
+    public function events()
+    {
+        return $this->hasMany(Event::class);
     }
 }
