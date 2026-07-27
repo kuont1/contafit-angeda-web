@@ -7,6 +7,9 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
 
@@ -45,7 +48,55 @@ class AuthController extends Controller
             'password' => Hash::make($request->input('password')),
         ]);
 
-        // Disparar envío de correo para verificación de email
+        // Disparar correo de bienvenida vía Brevo REST API si está configurada
+        $apiKey = config('services.brevo.key');
+        $senderEmail = config('mail.from.address', 'contafitmach@gmail.com');
+        $welcomeSent = false;
+
+        if ($apiKey) {
+            try {
+                $response = Http::withHeaders([
+                    'api-key' => $apiKey,
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json',
+                ])->post('https://api.brevo.com/v3/smtp/email', [
+                    'sender' => ['name' => 'ContaFit Agenda', 'email' => $senderEmail],
+                    'to' => [['email' => $user->email, 'name' => $user->first_name]],
+                    'subject' => "🎉 ¡Bienvenido a ContaFit Agenda Web!",
+                    'textContent' => "🎉 ¡Hola {$user->first_name}!\n\nBienvenido a ContaFit Agenda Web. Tu cuenta se ha creado exitosamente con el correo {$user->email}.\n\nYa puedes comenzar a organizar tus tareas, recordatorios y consultar los feriados oficiales de Ecuador.\n\nSaludos,\nEl equipo de ContaFit Agenda",
+                    'htmlContent' => "<html><body>
+                        <h2>🎉 ¡Bienvenido, {$user->first_name}!</h2>
+                        <p>Tu cuenta se ha creado exitosamente con el correo <strong>{$user->email}</strong> en ContaFit Agenda Web.</p>
+                        <p>Ya puedes comenzar a organizar tus tareas, recordatorios y consultar los feriados oficiales de Ecuador.</p>
+                        <br><p>Saludos,<br>El equipo de ContaFit Agenda</p>
+                    </body></html>",
+                ]);
+
+                if ($response->successful()) {
+                    $welcomeSent = true;
+                    Log::info("Correo de bienvenida enviado a {$user->email} vía Brevo API v3. Message ID: " . $response->json('messageId'));
+                } else {
+                    Log::warning("Error al enviar bienvenida Brevo API ({$response->status()}): " . $response->body());
+                }
+            } catch (\Throwable $e) {
+                Log::warning("Excepción al enviar bienvenida vía Brevo API: " . $e->getMessage());
+            }
+        }
+
+        if (! $welcomeSent) {
+            try {
+                Mail::raw(
+                    "🎉 ¡Hola {$user->first_name}!\n\nBienvenido a ContaFit Agenda Web. Tu cuenta se ha creado exitosamente con el correo {$user->email}.\n\nYa puedes comenzar a gestionar tus tareas, recordatorios y consultar los feriados nacionales de Ecuador.\n\nSaludos,\nEl equipo de ContaFit Agenda",
+                    function ($message) use ($user) {
+                        $message->to($user->email)
+                                ->subject("🎉 ¡Bienvenido a ContaFit Agenda Web!");
+                    }
+                );
+            } catch (\Throwable $e) {
+                Log::warning("No se pudo enviar el correo de bienvenida por Mail facade a {$user->email}: " . $e->getMessage());
+            }
+        }
+
         try {
             $user->sendEmailVerificationNotification();
         } catch (\Throwable $e) {
@@ -57,7 +108,7 @@ class AuthController extends Controller
         return $this->successResponse([
             'user' => $user,
             'auth_token' => $token,
-        ], 'Usuario registrado correctamente. Por favor verifica tu correo electrónico.', 201);
+        ], 'Usuario registrado correctamente. Te hemos enviado un correo de bienvenida.', 201);
     }
 
     public function login(Request $request): JsonResponse
@@ -146,7 +197,6 @@ class AuthController extends Controller
 
         return $this->successResponse(null, 'Cuenta eliminada de forma permanente.');
     }
-
 
     private function successResponse(mixed $data, string $message, int $status = 200): JsonResponse
     {

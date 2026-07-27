@@ -12,6 +12,7 @@ class Notification extends Model
 
     protected $fillable = [
         'event_id',
+        'user_id',
         'scheduled_at',
         'sent_at',
         'status',
@@ -28,5 +29,10 @@ class Notification extends Model
     public function event(): BelongsTo
     {
         return $this->belongsTo(Event::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 }

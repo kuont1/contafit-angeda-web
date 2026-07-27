@@ -11,9 +11,10 @@ return new class extends Migration
         Schema::create('notifications', function (Blueprint $table) {
             $table->id();
             $table->foreignId('event_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained()->cascadeOnDelete();
             $table->timestamp('scheduled_at');
             $table->timestamp('sent_at')->nullable();
-            $table->enum('status', ['pendiente', 'enviada', 'fallida'])->default('pendiente');
+            $table->string('status', 30)->default('pendiente');
             $table->timestamps();
         });
     }

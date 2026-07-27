@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendNotificationJob;
 use App\Models\Event;
 use App\Models\Notification;
 use Carbon\Carbon;
@@ -13,7 +14,7 @@ use Illuminate\Support\Facades\Validator;
 class EventController extends Controller
 {
     /**
-     * RF-07: Listar eventos con filtros avanzados y búsqueda.
+     * RF-07: Listar eventos con filtros avanzados y búsqueda (solo eventos no eliminados).
      */
     public function index(Request $request): JsonResponse
     {
@@ -59,7 +60,7 @@ class EventController extends Controller
     }
 
     /**
-     * RF-06 & Store: Crear evento (con validación de eventos recurrentes).
+     * RF-06 & Store: Crear evento.
      */
     public function store(Request $request): JsonResponse
     {
@@ -102,12 +103,21 @@ class EventController extends Controller
             'reminder_minutes_before' => $request->input('reminder_minutes_before'),
         ]);
 
-        // Programar notificación automática
+        // Programar notificación automática y despachar Job asíncrono (RF-10 / ADR-006)
+        $scheduledAt = (new \App\Services\NotificationService())->calculateScheduledTime($event);
+
         Notification::create([
             'event_id' => $event->id,
-            'scheduled_at' => Carbon::parse($event->start_at),
+            'user_id' => $event->user_id,
+            'scheduled_at' => $scheduledAt,
             'status' => 'pendiente',
         ]);
+
+        if ($scheduledAt->isFuture()) {
+            SendNotificationJob::dispatch($event)->delay($scheduledAt);
+        } else {
+            SendNotificationJob::dispatch($event);
+        }
 
         return response()->json([
             'success' => true,
@@ -265,12 +275,12 @@ class EventController extends Controller
     }
 
     /**
-     * RF-06: Eliminar (soft delete) solo esa instancia individual sin borrar el padre.
+     * RF-06: Ocultar/Eliminar únicamente la ocurrencia de una fecha específica sin borrar la serie padre.
      * DELETE /api/events/{id}/instance
      */
     public function destroyInstance(Request $request, int $id): JsonResponse
     {
-        $event = Event::find($id);
+        $event = Event::withTrashed()->find($id);
 
         if (! $event) {
             return response()->json([
@@ -286,8 +296,38 @@ class EventController extends Controller
             ], 403);
         }
 
-        // Realizar Soft Delete de la instancia
-        $event->delete();
+        // Si es una ocurrencia hijo previamente creada (recurrence_parent_id !== null) o evento NO recurrente, lo eliminamos directamente (soft delete)
+        if ($event->recurrence_parent_id !== null || ! $event->is_recurring) {
+            $event->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Instancia del evento eliminada correctamente.',
+            ]);
+        }
+
+        // Si es un evento padre recurrente, leemos la fecha enviada por query o body para ocultarla (status = 'excluded')
+        $date = $request->query('date', $request->input('date'));
+
+        if (! $date) {
+            $date = Carbon::parse($event->start_at)->toDateString();
+        }
+
+        $timeStr = Carbon::parse($event->start_at)->toTimeString();
+
+        // Ocultamiento lógico: Crear una marca de exclusión activa (status = 'excluded') asignada a esa fecha concreta
+        Event::create([
+            'user_id' => $request->user()->id,
+            'title' => $event->title,
+            'description' => $event->description,
+            'type' => $event->type,
+            'start_at' => "{$date} {$timeStr}",
+            'end_at' => $event->end_at ? "{$date} " . Carbon::parse($event->end_at)->toTimeString() : null,
+            'color' => $event->color,
+            'status' => 'excluded',
+            'is_recurring' => false,
+            'recurrence_parent_id' => $event->id,
+        ]);
 
         return response()->json([
             'success' => true,
@@ -362,6 +402,8 @@ class EventController extends Controller
             ], 403);
         }
 
+        // Eliminar (soft delete) también instancias o exclusiones hijas de este evento padre
+        Event::where('recurrence_parent_id', $event->id)->delete();
         $event->delete();
 
         return response()->json([

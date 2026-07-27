@@ -2,6 +2,7 @@
 
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 use Symfony\Component\Process\Process;
 
 Artisan::command('inspire', function () {
@@ -19,3 +20,5 @@ Artisan::command('test', function () {
 
     return $process->getExitCode();
 })->purpose('Run the application test suite.');
+
+Schedule::command('notifications:process-pending')->everyMinute();

@@ -16,8 +16,8 @@ return new class extends Migration
             $table->enum('type', ['tarea', 'recordatorio', 'fecha_importante']);
             $table->timestamp('start_at');
             $table->timestamp('end_at')->nullable();
-            $table->string('color', 7)->nullable();
-            $table->enum('status', ['pendiente', 'en_progreso', 'completada'])->default('pendiente');
+            $table->string('color', 50)->nullable();
+            $table->string('status', 30)->default('pendiente');
             $table->boolean('is_recurring')->default(false);
             $table->enum('recurrence_frequency', ['diaria', 'semanal', 'mensual', 'anual'])->nullable();
             $table->foreignId('recurrence_parent_id')->nullable()->constrained('events')->nullOnDelete();
