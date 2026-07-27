@@ -144,6 +144,33 @@ class EventController extends Controller
         return $this->successResponse(null, 'Evento eliminado correctamente.');
     }
 
+    public function updateStatus(Request $request, string $id): JsonResponse
+    {
+        $event = $this->resolveAccessibleEvent($request, $id);
+
+        if ($event instanceof JsonResponse) {
+            return $event;
+        }
+
+        $validator = Validator::make($request->all(), [
+            'status' => ['required', 'string', Rule::in(['pendiente', 'en_progreso', 'completada'])],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->validationErrorResponse($validator->errors()->toArray());
+        }
+
+        $status = $validator->validated()['status'];
+
+        $event->status = $status;
+        $event->completed_at = $status === 'completada' ? Carbon::now() : null;
+        $event->save();
+
+        return $this->successResponse([
+            'event' => $event->fresh(),
+        ], 'Estado del evento actualizado correctamente.');
+    }
+
     private function storeRules(): array
     {
         return [
