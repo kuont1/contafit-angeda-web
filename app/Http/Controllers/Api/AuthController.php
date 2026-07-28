@@ -8,15 +8,28 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
 {
     public function register(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'first_name' => ['required', 'string', 'max:100'],
+            'middle_name' => ['nullable', 'string', 'max:100'],
+            'last_name' => ['required', 'string', 'max:100'],
+            'second_last_name' => ['nullable', 'string', 'max:100'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'password' => [
+                'required',
+                'string',
+                'confirmed',
+                Password::min(8)
+                    ->letters()
+                    ->mixedCase()
+                    ->numbers()
+                    ->symbols(),
+            ],
         ]);
 
         if ($validator->fails()) {
@@ -24,17 +37,27 @@ class AuthController extends Controller
         }
 
         $user = User::create([
-            'name' => $request->input('name'),
+            'first_name' => $request->input('first_name'),
+            'middle_name' => $request->input('middle_name'),
+            'last_name' => $request->input('last_name'),
+            'second_last_name' => $request->input('second_last_name'),
             'email' => $request->input('email'),
             'password' => Hash::make($request->input('password')),
         ]);
+
+        // Disparar envío de correo para verificación de email
+        try {
+            $user->sendEmailVerificationNotification();
+        } catch (\Throwable $e) {
+            // Log si el servidor de correo aún no está alcanzable durante desarrollo
+        }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return $this->successResponse([
             'user' => $user,
             'auth_token' => $token,
-        ], 'Usuario registrado correctamente.', 201);
+        ], 'Usuario registrado correctamente. Por favor verifica tu correo electrónico.', 201);
     }
 
     public function login(Request $request): JsonResponse
@@ -79,6 +102,51 @@ class AuthController extends Controller
             'user' => $request->user(),
         ], 'Usuario autenticado.');
     }
+
+    public function updateSettings(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'show_holidays' => ['required', 'boolean'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->validationErrorResponse($validator->errors()->toArray());
+        }
+
+        $user = $request->user();
+        $user->update([
+            'show_holidays' => $request->input('show_holidays'),
+        ]);
+
+        return $this->successResponse([
+            'user' => $user->fresh(),
+        ], 'Ajustes actualizados correctamente.');
+    }
+
+    public function deleteAccount(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'password' => ['required', 'string'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->validationErrorResponse($validator->errors()->toArray());
+        }
+
+        $user = $request->user();
+
+        if (! Hash::check($request->input('password'), $user->password)) {
+            return $this->errorResponse('La contraseña ingresada es incorrecta.', null, 403);
+        }
+
+        // Hard delete en cascada de todos los eventos y tokens
+        $user->tokens()->delete();
+        $user->events()->forceDelete();
+        $user->delete();
+
+        return $this->successResponse(null, 'Cuenta eliminada de forma permanente.');
+    }
+
 
     private function successResponse(mixed $data, string $message, int $status = 200): JsonResponse
     {

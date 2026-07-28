@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'feriados_io' => [
+        'key' => env('FERIADOS_IO_API_KEY'),
+        'country' => env('FERIADOS_IO_COUNTRY', 'ec'),
+    ],
+
+
 ];
+

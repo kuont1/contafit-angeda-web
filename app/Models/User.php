@@ -2,14 +2,15 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
@@ -20,10 +21,14 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
+        'first_name',
+        'middle_name',
+        'last_name',
+        'second_last_name',
         'email',
         'password',
         'show_holidays',
+        'email_verified_at',
     ];
 
     /**
@@ -37,6 +42,15 @@ class User extends Authenticatable
     ];
 
     /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array<int, string>
+     */
+    protected $appends = [
+        'name',
+    ];
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -47,6 +61,21 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'show_holidays' => 'boolean',
         ];
+    }
+
+    /**
+     * Accessor dinámico para la propiedad 'name' (Nombre completo).
+     */
+    protected function name(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => trim(implode(' ', array_filter([
+                $this->first_name,
+                $this->middle_name,
+                $this->last_name,
+                $this->second_last_name,
+            ])))
+        );
     }
 
     public function events()
