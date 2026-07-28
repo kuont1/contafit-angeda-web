@@ -11,6 +11,10 @@
 
 RF/RNF: [ej. RF-04] — o si es cambio menor solicitado por el cliente, indicar el origen de la solicitud
 
+## Autor del cambio
+
+Desarrollador: [nombre]
+
 ## Checklist de verificación (Anexo A - Política de Gestión de Cambios)
 
 ### Para cambio menor
@@ -25,6 +29,8 @@ RF/RNF: [ej. RF-04] — o si es cambio menor solicitado por el cliente, indicar 
 - [ ] No revierte funcionalidad previamente aceptada
 - [ ] El commit referencia el RF/RNF correspondiente
 
-## Notas de revisión
+## Revisión (completado por Tester/QA)
 
-[Comentario final del revisor antes de aprobar o rechazar, ej. "Verificado contra RF-04, pruebas manuales correctas, se aprueba"]
+Revisor: [nombre, debe ser distinto al autor del cambio]
+Resultado: [Aprobado / Cambios solicitados]
+Notas de revisión: [ej. "Verificado contra RF-04, pruebas manuales correctas, se aprueba"]
