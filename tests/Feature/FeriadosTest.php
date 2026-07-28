@@ -32,7 +32,7 @@ class FeriadosTest extends TestCase
             ], 200),
         ]);
 
-        $service = new FeriadosService();
+        $service = new FeriadosService;
         $holidays = $service->syncHolidays(2026, 'co');
 
         $this->assertCount(2, $holidays);

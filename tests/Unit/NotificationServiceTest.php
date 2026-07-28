@@ -2,9 +2,9 @@
 
 namespace Tests\Unit;
 
-use App\Services\NotificationService;
 use App\Models\Event;
 use App\Models\User;
+use App\Services\NotificationService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -27,7 +27,7 @@ class NotificationServiceTest extends TestCase
             'status' => 'pendiente',
         ]);
 
-        $service = new NotificationService();
+        $service = new NotificationService;
 
         // Calcular hora con 15 minutos de anticipación
         $scheduledTime = $service->calculateScheduledTime($event, 15);

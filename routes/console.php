@@ -10,9 +10,9 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Artisan::command('test', function () {
-    $binary = base_path('vendor/bin/phpunit' . (PHP_OS_FAMILY === 'Windows' ? '.bat' : ''));
+    $binary = base_path('vendor/bin/phpunit'.(PHP_OS_FAMILY === 'Windows' ? '.bat' : ''));
 
-    $process = Process::fromShellCommandline('"' . $binary . '"', base_path());
+    $process = Process::fromShellCommandline('"'.$binary.'"', base_path());
     $process->setTimeout(null);
     $process->run(function (string $type, string $buffer): void {
         $this->output->write($buffer);

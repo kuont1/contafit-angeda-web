@@ -14,9 +14,7 @@ class SendNotificationJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public function __construct(public Event $event)
-    {
-    }
+    public function __construct(public Event $event) {}
 
     public function handle(NotificationServiceInterface $notificationService): void
     {

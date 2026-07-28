@@ -10,7 +10,9 @@ use Illuminate\Support\Facades\Log;
 class FeriadosService
 {
     protected string $apiKey;
+
     protected string $country;
+
     protected string $baseUrl = 'https://api.feriados.io/v1';
 
     public function __construct()
@@ -29,7 +31,7 @@ class FeriadosService
 
         try {
             $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->apiKey,
+                'Authorization' => 'Bearer '.$this->apiKey,
                 'Accept' => 'application/json',
             ])->timeout(5)->get("{$this->baseUrl}/{$country}/holidays/{$year}");
 
@@ -60,7 +62,7 @@ class FeriadosService
                 $this->seedEcuadorDefaultHolidays($year);
             }
         } catch (\Throwable $e) {
-            Log::error('FeriadosService exception: ' . $e->getMessage());
+            Log::error('FeriadosService exception: '.$e->getMessage());
             $this->seedEcuadorDefaultHolidays($year);
         }
 

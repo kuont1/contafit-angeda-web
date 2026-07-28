@@ -10,6 +10,7 @@ use Illuminate\Console\Command;
 class ProcessNotifications extends Command
 {
     protected $signature = 'notifications:process-pending';
+
     protected $description = 'Procesar e intentar enviar notificaciones pendientes programadas';
 
     public function handle(NotificationService $notificationService): void
@@ -19,7 +20,7 @@ class ProcessNotifications extends Command
             ->with('event')
             ->get();
 
-        $this->info("Procesando " . $pending->count() . " notificaciones pendientes...");
+        $this->info('Procesando '.$pending->count().' notificaciones pendientes...');
 
         foreach ($pending as $notification) {
             if ($notification->event) {

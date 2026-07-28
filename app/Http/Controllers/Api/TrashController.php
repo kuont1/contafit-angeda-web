@@ -23,10 +23,10 @@ class TrashController extends Controller
                         ->where('status', '!=', 'excluded');
                 })
                 // O marcas de exclusión visibles en papelera (deleted_at null y status = excluded)
-                ->orWhere(function ($q) {
-                    $q->whereNull('deleted_at')
-                        ->where('status', 'excluded');
-                });
+                    ->orWhere(function ($q) {
+                        $q->whereNull('deleted_at')
+                            ->where('status', 'excluded');
+                    });
             })
             ->orderBy('updated_at', 'desc')
             ->get();

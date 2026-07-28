@@ -16,4 +16,9 @@ interface NotificationServiceInterface
      * Procesa el envío asíncrono de la alerta asociada a un evento.
      */
     public function sendAlert(Event $event): bool;
+
+    /**
+     * Procesa e intenta enviar todas las notificaciones pendientes que hayan cumplido su horario.
+     */
+    public function processPendingNotifications(): int;
 }
