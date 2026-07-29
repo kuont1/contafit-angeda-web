@@ -1,0 +1,552 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "ContaFit Agenda Web API",
+    "description": "Especificación de API RESTful (OpenAPI 3.0 / Swagger) para la plataforma ContaFit Agenda Web. Incluye autenticación con JWT (RFC 7519), gestión de usuarios, eventos recurrentes, feriados de Ecuador, notificaciones por correo vía Brevo API v3 y papelera de reciclaje con purga automática.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Soporte ContaFit Agenda Web",
+      "email": "contafitmach@gmail.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8000",
+      "description": "Servidor de Desarrollo Local"
+    }
+  ],
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/register": {
+      "post": {
+        "summary": "Registro de usuario (RF-01)",
+        "description": "Registra un nuevo usuario en la plataforma indicando nombres, correo electrónico y contraseña segura.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["first_name", "last_name", "email", "password"],
+                "properties": {
+                  "first_name": { "type": "string", "example": "Galo" },
+                  "middle_name": { "type": "string", "example": "Alberto" },
+                  "last_name": { "type": "string", "example": "Kuontay" },
+                  "second_last_name": { "type": "string", "example": "Sánchez" },
+                  "email": { "type": "string", "format": "email", "example": "usuario@ejemplo.com" },
+                  "password": { "type": "string", "format": "password", "example": "Password123!" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuario registrado exitosamente con token JWT retornado",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AuthSuccessResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/400BadRequest" },
+          "422": { "$ref": "#/components/responses/422ValidationError" },
+          "500": { "$ref": "#/components/responses/500ServerError" }
+        }
+      }
+    },
+    "/api/login": {
+      "post": {
+        "summary": "Inicio de sesión y autenticación (RF-02 / RNF-02)",
+        "description": "Autentica al usuario con correo y contraseña, retornando un Token JWT (RFC 7519) firmado.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "format": "email", "example": "usuario@ejemplo.com" },
+                  "password": { "type": "string", "format": "password", "example": "Password123!" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Inicio de sesión exitoso con token JWT",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AuthSuccessResponse" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/401Unauthorized" },
+          "422": { "$ref": "#/components/responses/422ValidationError" },
+          "500": { "$ref": "#/components/responses/500ServerError" }
+        }
+      }
+    },
+    "/api/user": {
+      "get": {
+        "summary": "Obtener usuario autenticado",
+        "description": "Devuelve la información del usuario actual a partir del token JWT enviado en la cabecera.",
+        "responses": {
+          "200": {
+            "description": "Información del usuario obtenida correctamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user": { "$ref": "#/components/schemas/User" }
+                      }
+                    },
+                    "message": { "type": "string", "example": "Usuario autenticado." }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/401Unauthorized" }
+        }
+      }
+    },
+    "/api/logout": {
+      "post": {
+        "summary": "Cerrar sesión",
+        "description": "Revoca el token JWT y cierra la sesión del usuario.",
+        "responses": {
+          "200": {
+            "description": "Sesión cerrada correctamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Sesión cerrada correctamente." }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/401Unauthorized" }
+        }
+      }
+    },
+    "/api/account/send-deletion-code": {
+      "post": {
+        "summary": "Enviar código de verificación para borrado de cuenta (RF-03)",
+        "description": "Genera y envía un código de 6 dígitos al correo del usuario para confirmar la baja definitiva de su cuenta.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["password"],
+                "properties": {
+                  "password": { "type": "string", "format": "password", "example": "Password123!" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Código enviado exitosamente al correo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Código de verificación enviado a tu correo. Expira en 10 minutos." }
+                  }
+                }
+              }
+            }
+          },
+          "403": { "description": "Contraseña incorrecta", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "429": { "$ref": "#/components/responses/429TooManyRequests" }
+        }
+      }
+    },
+    "/api/account": {
+      "delete": {
+        "summary": "Eliminación definitiva de cuenta (Hard Delete) (RF-03)",
+        "description": "Elimina en cascada permanente el usuario, eventos, notificaciones y registros asociados.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["password"],
+                "properties": {
+                  "password": { "type": "string", "format": "password", "example": "Password123!" },
+                  "verification_code": { "type": "string", "example": "123456" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cuenta y datos asociados eliminados definitivamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Cuenta y todos sus registros asociados han sido eliminados permanentemente." }
+                  }
+                }
+              }
+            }
+          },
+          "403": { "description": "Contraseña o código inválido" },
+          "401": { "$ref": "#/components/responses/401Unauthorized" }
+        }
+      }
+    },
+    "/api/events": {
+      "get": {
+        "summary": "Listar eventos con filtros y búsqueda (RF-07)",
+        "description": "Obtiene la lista de eventos activos aplicando filtros por palabra clave, tipo, estado y rango de fechas.",
+        "parameters": [
+          { "name": "search", "in": "query", "description": "Palabra clave en título o descripción", "schema": { "type": "string" } },
+          { "name": "type", "in": "query", "description": "Filtrar por tipo (tarea, recordatorio, fecha_importante)", "schema": { "type": "string" } },
+          { "name": "status", "in": "query", "description": "Filtrar por estado (pendiente, en_progreso, completada)", "schema": { "type": "string" } },
+          { "name": "start_date", "in": "query", "description": "Fecha inicial (YYYY-MM-DD)", "schema": { "type": "string", "format": "date" } },
+          { "name": "end_date", "in": "query", "description": "Fecha final (YYYY-MM-DD)", "schema": { "type": "string", "format": "date" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de eventos recuperada correctamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "events": { "type": "array", "items": { "$ref": "#/components/schemas/Event" } }
+                      }
+                    },
+                    "message": { "type": "string", "example": "Eventos recuperados correctamente." }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/401Unauthorized" }
+        }
+      },
+      "post": {
+        "summary": "Crear nuevo evento o evento recurrente (RF-04 / RF-05 / RF-06)",
+        "description": "Crea un evento indicando tipo, horarios, color, reglas de repetición y minutos de anticipación para notificación.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EventCreateInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Evento creado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "event": { "$ref": "#/components/schemas/Event" }
+                      }
+                    },
+                    "message": { "type": "string", "example": "Evento creado correctamente." }
+                  }
+                }
+              }
+            }
+          },
+          "422": { "$ref": "#/components/responses/422ValidationError" },
+          "401": { "$ref": "#/components/responses/401Unauthorized" }
+        }
+      }
+    },
+    "/api/events/{id}": {
+      "get": {
+        "summary": "Obtener detalle de un evento",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Detalle del evento" },
+          "404": { "$ref": "#/components/responses/404NotFound" }
+        }
+      },
+      "patch": {
+        "summary": "Actualizar evento",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/EventCreateInput" } }
+          }
+        },
+        "responses": {
+          "200": { "description": "Evento actualizado correctamente" },
+          "404": { "$ref": "#/components/responses/404NotFound" }
+        }
+      },
+      "delete": {
+        "summary": "Enviar evento a la papelera (Soft Delete) (RF-11)",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": {
+            "description": "Evento movido a la papelera de reciclaje",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Evento enviado a la papelera de reciclaje." }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/404NotFound" }
+        }
+      }
+    },
+    "/api/events/{id}/instance": {
+      "patch": {
+        "summary": "Modificar ocurrencia individual de evento recurrente (RF-06)",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Ocurrencia modificada correctamente" }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar únicamente una ocurrencia de fecha específica (RF-06)",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Fecha específica oculta en el calendario y enviada a la papelera" }
+        }
+      }
+    },
+    "/api/dashboard/today": {
+      "get": {
+        "summary": "Obtener tareas y recordatorios del día (RF-08)",
+        "description": "Retorna los eventos tipo tarea/recordatorio correspondientes al día actual.",
+        "responses": {
+          "200": {
+            "description": "Lista del dashboard de hoy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "events": { "type": "array", "items": { "$ref": "#/components/schemas/Event" } },
+                        "date": { "type": "string", "format": "date", "example": "2026-07-31" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/holidays": {
+      "get": {
+        "summary": "Obtener feriados oficiales de Ecuador (RF-09)",
+        "description": "Retorna la lista de feriados nacionales de Ecuador obtenidos mediante la API Feriados.io.",
+        "responses": {
+          "200": {
+            "description": "Lista de feriados de Ecuador",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "holidays": { "type": "array", "items": { "$ref": "#/components/schemas/Holiday" } }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/events/trash": {
+      "get": {
+        "summary": "Listar eventos en la papelera de reciclaje (RF-11)",
+        "responses": {
+          "200": { "description": "Eventos eliminados suavemente y ocurrencias excluidas" }
+        }
+      }
+    },
+    "/api/events/{id}/restore": {
+      "post": {
+        "summary": "Restaurar evento desde la papelera (RF-11)",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Evento restaurado correctamente al calendario" }
+        }
+      }
+    },
+    "/api/events/{id}/force-delete": {
+      "delete": {
+        "summary": "Eliminar definitivamente un evento de la papelera (RF-11)",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }],
+        "responses": {
+          "200": { "description": "Evento borrado permanentemente de la base de datos" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Introduce tu Token JWT obtenido en /api/login o /api/register"
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "first_name": { "type": "string", "example": "Galo" },
+          "last_name": { "type": "string", "example": "Kuontay" },
+          "email": { "type": "string", "format": "email", "example": "usuario@ejemplo.com" },
+          "show_holidays": { "type": "boolean", "example": true }
+        }
+      },
+      "Event": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 10 },
+          "title": { "type": "string", "example": "Pagar Factura de Internet" },
+          "description": { "type": "string", "example": "Pago mensual del servicio" },
+          "type": { "type": "string", "enum": ["tarea", "recordatorio", "fecha_importante"], "example": "tarea" },
+          "start_at": { "type": "string", "format": "date-time", "example": "2026-08-01 20:00:00" },
+          "end_at": { "type": "string", "format": "date-time", "example": "2026-08-01 21:00:00" },
+          "color": { "type": "string", "example": "#3B82F6" },
+          "status": { "type": "string", "enum": ["pendiente", "en_progreso", "completada"], "example": "pendiente" },
+          "is_recurring": { "type": "boolean", "example": true },
+          "recurrence_frequency": { "type": "string", "enum": ["diaria", "semanal", "mensual", "anual"], "example": "mensual" },
+          "reminder_minutes_before": { "type": "integer", "example": 15 }
+        }
+      },
+      "EventCreateInput": {
+        "type": "object",
+        "required": ["title", "type", "start_at"],
+        "properties": {
+          "title": { "type": "string", "example": "Reunión de Proyecto" },
+          "description": { "type": "string", "example": "Revisión del sprint" },
+          "type": { "type": "string", "enum": ["tarea", "recordatorio", "fecha_importante"], "example": "recordatorio" },
+          "start_at": { "type": "string", "format": "date-time", "example": "2026-08-05 10:00:00" },
+          "end_at": { "type": "string", "format": "date-time", "example": "2026-08-05 11:00:00" },
+          "color": { "type": "string", "example": "#10B981" },
+          "is_recurring": { "type": "boolean", "example": false },
+          "recurrence_frequency": { "type": "string", "enum": ["diaria", "semanal", "mensual", "anual"] },
+          "reminder_minutes_before": { "type": "integer", "example": 30 }
+        }
+      },
+      "Holiday": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "name": { "type": "string", "example": "Primer Grito de Independencia" },
+          "date": { "type": "string", "format": "date", "example": "2026-08-10" },
+          "country": { "type": "string", "example": "ec" }
+        }
+      },
+      "AuthSuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "data": {
+            "type": "object",
+            "properties": {
+              "user": { "$ref": "#/components/schemas/User" },
+              "token": { "type": "string", "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." },
+              "jwt_token": { "type": "string", "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." },
+              "token_type": { "type": "string", "example": "Bearer" }
+            }
+          },
+          "message": { "type": "string", "example": "Inicio de sesión exitoso." }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": false },
+          "message": { "type": "string", "example": "Credenciales o datos no válidos." }
+        }
+      }
+    },
+    "responses": {
+      "400BadRequest": {
+        "description": "Solicitud malformada",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+      },
+      "401Unauthorized": {
+        "description": "Token JWT ausente, alterado o expirado",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+      },
+      "404NotFound": {
+        "description": "Recurso no encontrado",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+      },
+      "422ValidationError": {
+        "description": "Error de validación de campos de formulario",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+      },
+      "429TooManyRequests": {
+        "description": "Límite de frecuencia (rate limit) o cooldown activo",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+      },
+      "500ServerError": {
+        "description": "Error interno del servidor",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } }
+      }
+    }
+  }
+}
