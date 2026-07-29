@@ -12,6 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->date('date');
+            $table->boolean('is_recurring')->default(true);
             $table->boolean('is_movable')->default(false);
             $table->timestamps();
         });

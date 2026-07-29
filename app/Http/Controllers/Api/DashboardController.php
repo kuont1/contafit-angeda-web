@@ -14,26 +14,32 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         
-        // Permite recibir la fecha local enviada por la SPA o usa la fecha de Ecuador (America/Guayaquil)
         $dateInput = $request->query('date');
         $today = $dateInput ? Carbon::parse($dateInput) : Carbon::today('America/Guayaquil');
+        $includeCompleted = $request->boolean('include_completed', false);
 
-        // 1. Eventos directos del día evaluado (excluyendo fechas_importantes y completadas)
-        $directEvents = Event::where('user_id', $user->id)
+        // 1. Eventos directos del día evaluado (excluyendo fechas_importantes)
+        $directEventsQuery = Event::where('user_id', $user->id)
             ->whereDate('start_at', $today)
-            ->where('type', '!=', 'fecha_importante')
-            ->where('status', '!=', 'completada')
-            ->whereNull('completed_at')
-            ->get();
+            ->where('type', '!=', 'fecha_importante');
+
+        if (! $includeCompleted) {
+            $directEventsQuery->where('status', '!=', 'completada')->whereNull('completed_at');
+        }
+
+        $directEvents = $directEventsQuery->get();
 
         // 2. Eventos recurrentes activos que aplican al día evaluado
-        $recurringEvents = Event::where('user_id', $user->id)
+        $recurringEventsQuery = Event::where('user_id', $user->id)
             ->where('is_recurring', true)
             ->where('type', '!=', 'fecha_importante')
-            ->whereDate('start_at', '<=', $today)
-            ->where('status', '!=', 'completada')
-            ->whereNull('completed_at')
-            ->get()
+            ->whereDate('start_at', '<=', $today);
+
+        if (! $includeCompleted) {
+            $recurringEventsQuery->where('status', '!=', 'completada')->whereNull('completed_at');
+        }
+
+        $recurringEvents = $recurringEventsQuery->get()
             ->filter(function ($event) use ($today) {
                 $startDate = Carbon::parse($event->start_at);
 

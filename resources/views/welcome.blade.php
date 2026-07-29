@@ -49,7 +49,8 @@
                         <p class="text-xs font-semibold uppercase tracking-wider text-indigo-400">DASHBOARD DIARIO (RF-08)</p>
                         <h1 class="mt-1 text-2xl font-bold text-white">Tareas del Día</h1>
                     </div>
-                    <div id="todayDayBadge" class="grid h-11 w-11 place-items-center rounded-2xl bg-indigo-600 font-bold text-white shadow-md">
+                    <!-- BOTÓN INTERACTIVO BADGE DÍA ACTUAL -->
+                    <div id="todayDayBadge" onclick="goToToday()" class="grid h-11 w-11 place-items-center rounded-2xl bg-indigo-600 font-bold text-white shadow-md cursor-pointer hover:bg-indigo-500 transition" title="Ir al día de hoy en el calendario">
                         {{ date('d') }}
                     </div>
                 </div>
@@ -59,7 +60,7 @@
                 </button>
 
                 <!-- LISTA CHECKLIST DE TAREAS Y RECORDATORIOS DE HOY (RF-08) -->
-                <section class="flex-1 overflow-y-auto max-h-[580px] space-y-3">
+                <section class="flex-1 overflow-y-auto max-h-[460px] space-y-3">
                     <div class="flex items-center justify-between text-sm border-b border-white/10 pb-2">
                         <h2 class="font-semibold text-white">Pendientes de hoy</h2>
                         <div class="flex items-center gap-2">
@@ -73,6 +74,16 @@
 
                     <div id="todayTaskList" class="space-y-2">
                         <div class="p-4 text-center text-slate-400 text-xs">Cargando tareas del día...</div>
+                    </div>
+                </section>
+
+                <!-- RESUMEN DE FERIADOS DE ECUADOR (RF-09) -->
+                <section class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-xs font-semibold uppercase tracking-wider text-emerald-400">🇪🇨 FERIADOS DE ECUADOR (RF-09)</p>
+                    </div>
+                    <div id="holidaysWidget" class="text-xs text-slate-300 space-y-1.5">
+                        <div class="text-slate-400 text-[11px]">Cargando feriados...</div>
                     </div>
                 </section>
             </aside>
@@ -125,7 +136,7 @@
         </div>
     </div>
 
-    <!-- MODAL DE DETALLE DE DÍA Y GESTIÓN DE EVENTOS (RF-05, RF-06) -->
+    <!-- MODAL DE DETALLE DE DÍA Y GESTIÓN DE EVENTOS (RF-05, RF-06, RF-09) -->
     <div id="dayViewModal" class="fixed inset-0 z-50 flex items-center justify-center modal-bg p-4 hidden">
         <div class="w-full max-w-xl rounded-3xl modal-box p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
             <div class="flex items-center justify-between border-b border-white/10 pb-3">
@@ -137,7 +148,7 @@
             </div>
 
             <div id="dayViewContent" class="flex-1 overflow-y-auto space-y-3 pr-1">
-                <!-- Carga dinámica JS de eventos del día -->
+                <!-- Carga dinámica JS de eventos y feriados del día -->
             </div>
 
             <div class="border-t border-white/10 pt-3 flex justify-end gap-3">
@@ -151,11 +162,11 @@
     <div id="deleteRecurringModal" class="fixed inset-0 z-50 flex items-center justify-center modal-bg p-4 hidden">
         <div class="w-full max-w-md rounded-3xl modal-box p-6 shadow-2xl space-y-4">
             <div class="flex items-center justify-between border-b border-white/10 pb-3">
-                <h3 class="text-base font-bold text-amber-400">Opciones de Eliminación de Evento Recurrente (RF-06)</h3>
+                <h3 class="text-base font-bold text-amber-400">Opciones de Eliminación de Evento (RF-06)</h3>
                 <button onclick="closeDeleteRecurringModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
             </div>
 
-            <p class="text-xs text-slate-300">Este evento es recurrente. ¿Cómo deseas proceder con la eliminación?</p>
+            <p class="text-xs text-slate-300">¿Cómo deseas proceder con la eliminación de este evento?</p>
 
             <div class="space-y-2 pt-2">
                 <button onclick="confirmDeleteRecurringInstance()" class="w-full py-3 px-4 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-200 text-xs font-semibold text-left transition flex items-center justify-between">
@@ -163,7 +174,7 @@
                     <span>→</span>
                 </button>
                 <button onclick="confirmDeleteRecurringSeries()" class="w-full py-3 px-4 rounded-xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-200 text-xs font-semibold text-left transition flex items-center justify-between">
-                    <span>2. Eliminar TODA la serie y eventos futuros</span>
+                    <span>2. Eliminar EVENTO COMPLETO (Serie o registro base)</span>
                     <span>→</span>
                 </button>
             </div>
@@ -236,7 +247,7 @@
         </div>
     </div>
 
-    <!-- MODAL CREAR / EDITAR EVENTO (RF-04, RF-05, RF-06) -->
+    <!-- MODAL CREAR / EDITAR EVENTO (RF-04, RF-05, RF-06, RF-10) -->
     <div id="createModal" class="fixed inset-0 z-50 flex items-center justify-center modal-bg p-4 hidden">
         <div class="w-full max-w-lg rounded-3xl modal-box p-6 shadow-2xl space-y-4">
             <div class="flex items-center justify-between border-b border-white/10 pb-3">
@@ -276,9 +287,25 @@
                         <input type="datetime-local" id="evtStartAt" required class="w-full rounded-xl border border-white/10 bg-white/5 p-2 text-xs text-white focus:outline-none">
                     </div>
                     <div>
-                        <label class="block text-xs text-slate-300 mb-1">Hora Fin *</label>
-                        <input type="datetime-local" id="evtEndAt" required class="w-full rounded-xl border border-white/10 bg-white/5 p-2 text-xs text-white focus:outline-none">
+                        <label class="block text-xs text-slate-300 mb-1">Hora Fin (Opcional)</label>
+                        <input type="datetime-local" id="evtEndAt" class="w-full rounded-xl border border-white/10 bg-white/5 p-2 text-xs text-white focus:outline-none">
                     </div>
+                </div>
+
+                <!-- ANTICIPACIÓN DE NOTIFICACIÓN / ALERTA ASÍNCRONA (RF-10) -->
+                <div>
+                    <label class="block text-xs text-slate-300 mb-1">⏰ Anticipación de Alerta / Notificación (RF-10)</label>
+                    <select id="evtReminderMinutes" class="w-full rounded-xl border border-white/10 bg-[#1e293b] p-2.5 text-xs text-white focus:outline-none">
+                        <option value="0">En el momento del evento</option>
+                        <option value="15" selected>15 minutos antes</option>
+                        <option value="30">30 minutos antes</option>
+                        <option value="60">1 hora antes</option>
+                        <option value="120">2 horas antes</option>
+                        <option value="180">3 horas antes</option>
+                        <option value="1440">1 día antes</option>
+                        <option value="2880">2 días antes</option>
+                        <option value="10080">1 semana antes</option>
+                    </select>
                 </div>
 
                 <!-- EVENTOS RECURRENTES (RF-06) -->
@@ -333,19 +360,39 @@
         </div>
     </div>
 
-    <!-- JAVASCRIPT CORREGIDO -->
+    <!-- JAVASCRIPT: MANEJO DE SESIÓN REAL Y NAVEGACIÓN DE CALENDARIO -->
     <script>
-        let token = null;
-        let user = null;
+        let token = localStorage.getItem('auth_token') || null;
+        let user = JSON.parse(localStorage.getItem('user_data') || 'null');
+        let currentHolidays = [];
         let currentEvents = [];
         let currentDate = new Date();
         let selectedDayDateStr = null;
         let pendingDeleteEventId = null;
 
         document.addEventListener('DOMContentLoaded', () => {
-            localStorage.clear();
             checkAuth();
         });
+
+        function handleApiResponse(res) {
+            if (res.status === 401) {
+                handleUnauthorized();
+                return null;
+            }
+            return res;
+        }
+
+        function handleUnauthorized() {
+            localStorage.clear();
+            token = null;
+            user = null;
+            currentEvents = [];
+            currentHolidays = [];
+            document.getElementById('todayTaskList').innerHTML = `<div class="p-4 text-center text-slate-400 text-xs">Sesión expirada o usuario no registrado. Por favor inicia sesión.</div>`;
+            document.getElementById('calendarGrid').innerHTML = '';
+            document.getElementById('authModal').classList.remove('hidden');
+            checkAuth();
+        }
 
         function getLocalYYYYMMDD(dateObj = null) {
             const d = dateObj ? new Date(dateObj) : new Date();
@@ -364,6 +411,20 @@
             const hours = String(now.getHours()).padStart(2, '0');
             const minutes = String(now.getMinutes()).padStart(2, '0');
             return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        function formatDateTimeForApi(dtStr) {
+            if (!dtStr || dtStr.trim() === '') return null;
+            let s = dtStr.trim().replace('T', ' ');
+            if (s.length === 16) s += ':00';
+            return s;
+        }
+
+        function goToToday() {
+            currentDate = new Date();
+            const todayStr = getLocalYYYYMMDD();
+            renderCalendar();
+            openDayViewModal(todayStr);
         }
 
         function checkAuth() {
@@ -423,6 +484,7 @@
                 const data = await res.json();
                 if (data.success) {
                     currentEvents = [];
+                    currentHolidays = [];
                     token = data.data.auth_token;
                     user = data.data.user;
                     localStorage.setItem('auth_token', token);
@@ -460,6 +522,7 @@
                 const data = await res.json();
                 if (data.success) {
                     currentEvents = [];
+                    currentHolidays = [];
                     token = data.data.auth_token;
                     user = data.data.user;
                     localStorage.setItem('auth_token', token);
@@ -479,7 +542,7 @@
         function handleLogout() {
             localStorage.clear();
             token = null; user = null;
-            currentEvents = [];
+            currentEvents = []; currentHolidays = [];
             document.getElementById('todayTaskList').innerHTML = `<div class="p-4 text-center text-slate-400 text-xs">Por favor inicia sesión.</div>`;
             document.getElementById('calendarGrid').innerHTML = '';
             checkAuth();
@@ -487,6 +550,7 @@
 
         async function loadDashboardData() {
             await fetchTodayTasks();
+            await fetchHolidays(currentDate.getFullYear());
             await applyFilters();
         }
 
@@ -500,9 +564,12 @@
             const localTodayStr = getLocalYYYYMMDD();
 
             try {
-                const res = await fetch(`/api/dashboard/today?date=${localTodayStr}`, {
+                let res = await fetch(`/api/dashboard/today?date=${localTodayStr}&include_completed=${showCompleted ? 1 : 0}`, {
                     headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
                 });
+                res = handleApiResponse(res);
+                if (!res) return;
+
                 const data = await res.json();
                 if (data.success) {
                     let tasks = data.data.events || [];
@@ -511,10 +578,11 @@
                         tasks = tasks.filter(t => t.status !== 'completada');
                     }
 
-                    badge.innerText = `${tasks.length} tareas`;
+                    const pendingCount = tasks.filter(t => t.status !== 'completada').length;
+                    badge.innerText = `${pendingCount} pendientes`;
 
                     if (tasks.length === 0) {
-                        list.innerHTML = `<div class="p-4 text-center text-slate-400 text-xs">🎉 No tienes tareas pendientes para hoy.</div>`;
+                        list.innerHTML = `<div class="p-4 text-center text-slate-400 text-xs">🎉 No tienes tareas para mostrar.</div>`;
                         return;
                     }
 
@@ -538,14 +606,41 @@
                                     <span class="text-[10px] font-medium text-indigo-300">Estado: <strong>${t.status}</strong></span>
                                     <div class="flex gap-2">
                                         ${isCompleted ? 
-                                            `<button onclick="changeTaskStatus(${t.id}, 'pendiente')" class="text-amber-400 hover:text-amber-300 text-[10px] font-semibold">↩️ Desmarcar</button>` : 
-                                            `<button onclick="changeTaskStatus(${t.id}, 'en_progreso')" class="text-indigo-400 hover:text-indigo-300 text-[10px] font-semibold">🚀 En Progreso</button>`
+                                            `<button onclick="changeTaskStatus(${t.id}, 'pendiente')" class="text-amber-400 hover:text-amber-300 text-[10px] font-semibold cursor-pointer">↩️ Desmarcar</button>` : 
+                                            `<button onclick="changeTaskStatus(${t.id}, 'en_progreso')" class="text-indigo-400 hover:text-indigo-300 text-[10px] font-semibold cursor-pointer">🚀 En Progreso</button>`
                                         }
                                     </div>
                                 </div>
                             </div>
                         `;
                     }).join('');
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        // RF-09: FERIADOS ECUADOR
+        async function fetchHolidays(year = null) {
+            const widget = document.getElementById('holidaysWidget');
+            if (!token) return;
+
+            const reqYear = year || currentDate.getFullYear();
+
+            try {
+                let res = await fetch(`/api/holidays?year=${reqYear}`, {
+                    headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+                });
+                res = handleApiResponse(res);
+                if (!res) return;
+
+                const data = await res.json();
+                if (data.success) {
+                    currentHolidays = data.data.holidays || [];
+                    widget.innerHTML = currentHolidays.slice(0, 5).map(h => `
+                        <div class="flex items-center justify-between text-slate-300">
+                            <span>🇪🇨 ${h.name}</span>
+                            <span class="text-slate-400 font-mono text-[10px]">${h.date.slice(0, 10)}</span>
+                        </div>
+                    `).join('');
                 }
             } catch (err) { console.error(err); }
         }
@@ -564,9 +659,12 @@
             if (status) params.append('status', status);
 
             try {
-                const res = await fetch(`/api/events?${params.toString()}`, {
+                let res = await fetch(`/api/events?${params.toString()}`, {
                     headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
                 });
+                res = handleApiResponse(res);
+                if (!res) return;
+
                 const data = await res.json();
                 if (data.success) {
                     currentEvents = data.data.events || [];
@@ -576,12 +674,27 @@
         }
 
         async function navigateMonth(direction) {
+            const oldYear = currentDate.getFullYear();
             currentDate.setMonth(currentDate.getMonth() + direction);
+            const newYear = currentDate.getFullYear();
+            
+            if (oldYear !== newYear) {
+                await fetchHolidays(newYear);
+            }
             renderCalendar();
         }
 
         function eventMatchesDate(e, dateStr) {
-            const eventStart = e.start_at.slice(0, 10);
+            if (e.status === 'excluded' || e.deleted_at) return false;
+
+            const isExcluded = currentEvents.some(child => 
+                String(child.recurrence_parent_id) === String(e.id) && 
+                child.start_at.substring(0, 10) === dateStr &&
+                (child.status === 'excluded' || child.deleted_at)
+            );
+            if (isExcluded) return false;
+
+            const eventStart = e.start_at.substring(0, 10);
             if (eventStart === dateStr) return true;
             if (!e.is_recurring) return false;
             if (dateStr < eventStart) return false;
@@ -624,6 +737,7 @@
                 const isToday = (day === today.getDate() && month === today.getMonth() && year === today.getFullYear());
 
                 const dayEvents = currentEvents.filter(e => eventMatchesDate(e, dateKey));
+                const dayHolidays = currentHolidays.filter(h => h.date.startsWith(dateKey));
 
                 cellsHTML += `
                     <div onclick="openDayViewModal('${dateKey}')" class="relative flex min-h-[90px] flex-col overflow-hidden rounded-xl border border-white/10 p-2 text-white cursor-pointer hover:border-indigo-500/80 transition ${isToday ? 'ring-2 ring-indigo-500 bg-indigo-950/40' : 'bg-white/5'}">
@@ -633,6 +747,12 @@
                         </div>
 
                         <div class="mt-1 space-y-1 overflow-y-auto max-h-[60px]">
+                            ${dayHolidays.map(h => `
+                                <div class="rounded bg-emerald-600/90 px-1 py-0.5 text-[9px] font-semibold text-white truncate" title="${h.name}">
+                                    🇪🇨 ${h.name}
+                                </div>
+                            `).join('')}
+
                             ${dayEvents.map(e => `
                                 <div class="rounded px-1 py-0.5 text-[9px] font-semibold text-white truncate flex items-center justify-between" style="background-color: ${e.color}" title="${e.title}">
                                     <span>${e.is_recurring ? '🔄 ' : ''}${e.title}</span>
@@ -646,15 +766,27 @@
             grid.innerHTML = cellsHTML;
         }
 
-        // MODAL VER EVENTOS DEL DÍA (RF-05, RF-06)
+        // MODAL VER EVENTOS DEL DÍA (RF-05, RF-06, RF-09)
         function openDayViewModal(dateStr) {
             selectedDayDateStr = dateStr;
             document.getElementById('dayViewTitle').innerText = `📅 Eventos del Día (${dateStr})`;
             
             const container = document.getElementById('dayViewContent');
             const dayEvents = currentEvents.filter(e => eventMatchesDate(e, dateStr));
+            const dayHolidays = currentHolidays.filter(h => h.date.startsWith(dateStr));
 
             let html = '';
+
+            if (dayHolidays.length > 0) {
+                html += `<div class="mb-3 space-y-1">
+                    <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Feriados de Ecuador (RF-09)</h4>
+                    ${dayHolidays.map(h => `
+                        <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-xs text-emerald-200">
+                            🇪🇨 <strong>${h.name}</strong> (Feriado Oficial)
+                        </div>
+                    `).join('')}
+                </div>`;
+            }
 
             if (dayEvents.length === 0) {
                 html += `<div class="p-6 text-center text-slate-400 text-xs">No hay eventos ni tareas registradas para esta fecha.</div>`;
@@ -696,19 +828,9 @@
             openCreateModal(selectedDayDateStr);
         }
 
-        // PREGUNTA SI DESEA ELIMINAR SOLO ESTA OCURRENCIA O TODA LA SERIE (RF-06)
         function promptDeleteEvent(id) {
-            const event = currentEvents.find(e => e.id === id);
-            if (!event) return;
-
-            if (event.is_recurring || event.recurrence_parent_id) {
-                pendingDeleteEventId = id;
-                document.getElementById('deleteRecurringModal').classList.remove('hidden');
-            } else {
-                if (confirm('¿Eliminar este evento?')) {
-                    executeDeleteEvent(id, false);
-                }
-            }
+            pendingDeleteEventId = id;
+            document.getElementById('deleteRecurringModal').classList.remove('hidden');
         }
 
         function closeDeleteRecurringModal() {
@@ -716,17 +838,24 @@
             pendingDeleteEventId = null;
         }
 
-        // ELIMINA SOLO ESTA INSTANCIA (RF-06)
+        // ELIMINA SOLO ESTA OCURRENCIA ESPECÍFICA (RF-06)
         async function confirmDeleteRecurringInstance() {
-            if (!pendingDeleteEventId) return;
+            if (!pendingDeleteEventId || !selectedDayDateStr) return;
             const id = pendingDeleteEventId;
+            const dateStr = selectedDayDateStr;
             closeDeleteRecurringModal();
             
             try {
-                const res = await fetch(`/api/events/${id}/instance`, {
+                let res = await fetch(`/api/events/${id}/instance?date=${encodeURIComponent(dateStr)}`, {
                     method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+                    headers: { 
+                        'Authorization': `Bearer ${token}`, 
+                        'Accept': 'application/json' 
+                    }
                 });
+                res = handleApiResponse(res);
+                if (!res) return;
+
                 const data = await res.json();
                 if (data.success) {
                     closeDayViewModal();
@@ -736,20 +865,23 @@
             } catch (err) { console.error(err); }
         }
 
-        // ELIMINA TODA LA SERIE COMPLETA
+        // ELIMINA EVENTO COMPLETO / SERIE
         async function confirmDeleteRecurringSeries() {
             if (!pendingDeleteEventId) return;
             const id = pendingDeleteEventId;
             closeDeleteRecurringModal();
-            await executeDeleteEvent(id, true);
+            await executeDeleteEvent(id);
         }
 
         async function executeDeleteEvent(id) {
             try {
-                const res = await fetch(`/api/events/${id}`, {
+                let res = await fetch(`/api/events/${id}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
                 });
+                res = handleApiResponse(res);
+                if (!res) return;
+
                 const data = await res.json();
                 if (data.success) {
                     closeDayViewModal();
@@ -773,8 +905,9 @@
             document.getElementById('evtColor').value = event.color || '#3B82F6';
             
             document.getElementById('evtStartAt').value = event.start_at ? event.start_at.replace(' ', 'T').slice(0, 16) : getLocalDateTimeString(0);
-            document.getElementById('evtEndAt').value = event.end_at ? event.end_at.replace(' ', 'T').slice(0, 16) : getLocalDateTimeString(1);
-            
+            document.getElementById('evtEndAt').value = event.end_at ? event.end_at.replace(' ', 'T').slice(0, 16) : '';
+            document.getElementById('evtReminderMinutes').value = event.reminder_minutes_before !== null ? String(event.reminder_minutes_before) : '15';
+
             document.getElementById('evtIsRecurring').checked = !!event.is_recurring;
             document.getElementById('evtRecurrenceFreq').value = event.recurrence_frequency || 'diaria';
             toggleRecurrenceOptions();
@@ -791,6 +924,7 @@
             document.getElementById('evtColor').value = '#3B82F6';
             document.getElementById('evtIsRecurring').checked = false;
             document.getElementById('evtRecurrenceFreq').value = 'diaria';
+            document.getElementById('evtReminderMinutes').value = '15';
             document.getElementById('createError').classList.add('hidden');
             toggleRecurrenceOptions();
 
@@ -816,11 +950,14 @@
 
         async function changeTaskStatus(id, status) {
             try {
-                const res = await fetch(`/api/events/${id}/status`, {
+                let res = await fetch(`/api/events/${id}/status`, {
                     method: 'PATCH',
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify({ status: status })
                 });
+                res = handleApiResponse(res);
+                if (!res) return;
+
                 const data = await res.json();
                 if (data.success) {
                     await fetchTodayTasks();
@@ -837,14 +974,20 @@
 
             const editingId = document.getElementById('editingEventId').value;
             const isRecurring = document.getElementById('evtIsRecurring').checked;
+            const endAtVal = document.getElementById('evtEndAt').value;
+            const reminderVal = document.getElementById('evtReminderMinutes').value;
+
+            const formattedStartAt = formatDateTimeForApi(document.getElementById('evtStartAt').value);
+            const formattedEndAt = formatDateTimeForApi(endAtVal);
 
             const payload = {
                 title: document.getElementById('evtTitle').value,
                 description: document.getElementById('evtDescription').value,
                 type: document.getElementById('evtType').value,
                 color: document.getElementById('evtColor').value,
-                start_at: document.getElementById('evtStartAt').value.replace('T', ' ') + ':00',
-                end_at: document.getElementById('evtEndAt').value ? document.getElementById('evtEndAt').value.replace('T', ' ') + ':00' : null,
+                start_at: formattedStartAt,
+                end_at: formattedEndAt,
+                reminder_minutes_before: reminderVal !== '' ? parseInt(reminderVal) : 15,
                 is_recurring: isRecurring,
             };
 
@@ -854,7 +997,7 @@
             const method = editingId ? 'PATCH' : 'POST';
 
             try {
-                const res = await fetch(url, {
+                let res = await fetch(url, {
                     method: method,
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -863,13 +1006,20 @@
                     },
                     body: JSON.stringify(payload)
                 });
+                res = handleApiResponse(res);
+                if (!res) return;
+
                 const data = await res.json();
                 if (data.success) {
                     closeCreateModal();
                     await fetchTodayTasks();
                     await applyFilters();
                 } else {
-                    errDiv.innerText = data.message || 'Error al guardar el evento.';
+                    let msg = data.message || 'Error de validación.';
+                    if (data.data && data.data.errors) {
+                        msg += '<br>' + Object.values(data.data.errors).flat().join('<br>');
+                    }
+                    errDiv.innerHTML = msg;
                     errDiv.classList.remove('hidden');
                 }
             } catch (err) {
@@ -889,11 +1039,14 @@
             errDiv.classList.add('hidden');
 
             try {
-                const res = await fetch('/api/account', {
+                let res = await fetch('/api/account', {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify({ password: pass })
                 });
+                res = handleApiResponse(res);
+                if (!res) return;
+
                 const data = await res.json();
                 if (data.success) {
                     alert('Cuenta eliminada de forma permanente.');

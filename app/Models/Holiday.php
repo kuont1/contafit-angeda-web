@@ -12,6 +12,7 @@ class Holiday extends Model
     protected $fillable = [
         'name',
         'date',
+        'is_recurring',
         'is_movable',
     ];
 
@@ -19,6 +20,7 @@ class Holiday extends Model
     {
         return [
             'date' => 'date',
+            'is_recurring' => 'boolean',
             'is_movable' => 'boolean',
         ];
     }
