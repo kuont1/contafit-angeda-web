@@ -336,6 +336,26 @@
         </div>
     </div>
 
+    <!-- MODAL PAPELERA DE RECICLAJE (RF-11) -->
+    <div id="trashModal" class="fixed inset-0 z-50 flex items-center justify-center modal-bg p-4 hidden">
+        <div class="w-full max-w-xl rounded-3xl modal-box p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-white/10 pb-3">
+                <h3 class="text-base font-bold text-amber-400">🗑️ Papelera de Reciclaje (RF-11)</h3>
+                <button onclick="closeTrashModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+            </div>
+
+            <p class="text-xs text-slate-400">Los eventos eliminados permanecen en la papelera durante 30 días antes de ser purgados automáticamente.</p>
+
+            <div id="trashList" class="space-y-2.5 max-h-[350px] overflow-y-auto pr-1">
+                <div class="p-4 text-center text-slate-400 text-xs">Cargando papelera...</div>
+            </div>
+
+            <div class="flex justify-end pt-2 border-t border-white/10">
+                <button type="button" onclick="closeTrashModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL BORRADO DE CUENTA (RF-03) -->
     <div id="deleteAccountModal" class="fixed inset-0 z-50 flex items-center justify-center modal-bg p-4 hidden">
         <div class="w-full max-w-md rounded-3xl modal-box p-6 shadow-2xl space-y-4">
@@ -344,17 +364,30 @@
                 <button onclick="closeDeleteAccountModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
             </div>
 
-            <p class="text-xs text-slate-300">Esta acción eliminará de forma permanente (hard delete) tu usuario, eventos y registros asociados.</p>
+            <p class="text-xs text-slate-300">Por seguridad, valida tu contraseña y solicita un código de 6 dígitos enviado a tu correo.</p>
 
             <form onsubmit="handleDeleteAccount(event)" class="space-y-3">
                 <div>
-                    <label class="block text-xs text-slate-300 mb-1">Ingresa tu contraseña para confirmar *</label>
+                    <label class="block text-xs text-slate-300 mb-1">1. Contraseña actual *</label>
                     <input type="password" id="deletePasswordInput" required placeholder="••••••••" class="w-full rounded-xl border border-red-500/30 bg-black/50 p-2.5 text-xs text-white focus:outline-none">
                 </div>
+
+                <div>
+                    <button type="button" id="btnSendDelCode" onclick="handleSendDeletionCode()" class="w-full py-2 rounded-xl border border-indigo-500/40 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 text-xs font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed">
+                        📧 Solicitar Código de Verificación al Correo
+                    </button>
+                    <p id="deleteCodeStatus" class="text-[11px] text-emerald-400 mt-1 hidden"></p>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-slate-300 mb-1">2. Código de Verificación (6 dígitos)</label>
+                    <input type="text" id="deleteCodeInput" placeholder="Ej. 123456" class="w-full rounded-xl border border-red-500/30 bg-black/50 p-2.5 text-xs text-white focus:outline-none font-mono">
+                </div>
+
                 <div id="deleteAccountError" class="text-xs text-red-400 hidden"></div>
-                <div class="flex gap-3">
+                <div class="flex gap-3 pt-2">
                     <button type="button" onclick="closeDeleteAccountModal()" class="flex-1 py-2.5 rounded-xl border border-white/10 bg-white/5 text-slate-300 text-xs">Cancelar</button>
-                    <button type="submit" class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 font-semibold text-white text-xs transition">Confirmar Baja</button>
+                    <button type="submit" class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 font-semibold text-white text-xs transition">Confirmar Baja Definitiva</button>
                 </div>
             </form>
         </div>
@@ -439,6 +472,7 @@
                 document.getElementById('authModal').classList.add('hidden');
                 header.innerHTML = `
                     <span class="text-xs font-semibold text-slate-200">👋 <strong>${user.name}</strong></span>
+                    <button onclick="openTrashModal()" class="px-2.5 py-1 rounded-xl border border-amber-500/30 bg-amber-500/10 text-[11px] text-amber-300 hover:bg-amber-500/20 transition">🗑️ Papelera (RF-11)</button>
                     <button onclick="openDeleteAccountModal()" class="px-2.5 py-1 rounded-xl border border-red-500/30 bg-red-500/10 text-[11px] text-red-300 hover:bg-red-500/20 transition">Borrar Cuenta (RF-03)</button>
                     <button onclick="handleLogout()" class="px-2.5 py-1 rounded-xl border border-white/10 bg-white/5 text-[11px] text-slate-300 hover:bg-white/10 transition">Salir</button>
                 `;
@@ -684,17 +718,38 @@
             renderCalendar();
         }
 
+        function getEventLocalDateStr(dtStr) {
+            if (!dtStr) return '';
+            const s = dtStr.replace(' ', 'T');
+            const d = new Date(s);
+            if (isNaN(d.getTime())) return dtStr.substring(0, 10);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        function getEventLocalTimeStr(dtStr) {
+            if (!dtStr) return '';
+            const s = dtStr.replace(' ', 'T');
+            const d = new Date(s);
+            if (isNaN(d.getTime())) return dtStr.slice(11, 16);
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mm = String(d.getMinutes()).padStart(2, '0');
+            return `${hh}:${mm}`;
+        }
+
         function eventMatchesDate(e, dateStr) {
             if (e.status === 'excluded' || e.deleted_at) return false;
 
             const isExcluded = currentEvents.some(child => 
                 String(child.recurrence_parent_id) === String(e.id) && 
-                child.start_at.substring(0, 10) === dateStr &&
+                getEventLocalDateStr(child.start_at) === dateStr &&
                 (child.status === 'excluded' || child.deleted_at)
             );
             if (isExcluded) return false;
 
-            const eventStart = e.start_at.substring(0, 10);
+            const eventStart = getEventLocalDateStr(e.start_at);
             if (eventStart === dateStr) return true;
             if (!e.is_recurring) return false;
             if (dateStr < eventStart) return false;
@@ -800,7 +855,7 @@
                                     <span class="text-[10px] font-bold text-indigo-300 uppercase">${e.type} ${e.is_recurring ? '(Recurrente 🔄)' : ''}</span>
                                     <h4 class="text-xs font-bold text-white">${e.title}</h4>
                                     <p class="text-[11px] text-slate-300 mt-0.5">${e.description || 'Sin descripción'}</p>
-                                    <p class="text-[10px] text-slate-400 mt-1">Horario: ${e.start_at.slice(11, 16)} ${e.end_at ? '- ' + e.end_at.slice(11, 16) : ''}</p>
+                                    <p class="text-[10px] text-slate-400 mt-1">Horario: ${getEventLocalTimeStr(e.start_at)} ${e.end_at ? '- ' + getEventLocalTimeStr(e.end_at) : ''}</p>
                                 </div>
                                 <span class="h-3 w-3 rounded-full shrink-0" style="background-color: ${e.color}"></span>
                             </div>
@@ -977,8 +1032,17 @@
             const endAtVal = document.getElementById('evtEndAt').value;
             const reminderVal = document.getElementById('evtReminderMinutes').value;
 
-            const formattedStartAt = formatDateTimeForApi(document.getElementById('evtStartAt').value);
-            const formattedEndAt = formatDateTimeForApi(endAtVal);
+            const rawStartAt = document.getElementById('evtStartAt').value;
+            const rawEndAt = document.getElementById('evtEndAt').value;
+
+            const formattedStartAt = formatDateTimeForApi(rawStartAt);
+            let formattedEndAt = formatDateTimeForApi(rawEndAt);
+
+            if (!formattedEndAt || formattedEndAt.trim() === '') {
+                formattedEndAt = null;
+            } else if (rawStartAt && rawEndAt && new Date(rawEndAt) < new Date(rawStartAt)) {
+                formattedEndAt = formattedStartAt;
+            }
 
             const payload = {
                 title: document.getElementById('evtTitle').value,
@@ -1028,19 +1092,149 @@
             }
         }
 
-        // RF-03: SOLICITUD DE BORRADO DE CUENTA
-        function openDeleteAccountModal() { document.getElementById('deleteAccountModal').classList.remove('hidden'); }
-        function closeDeleteAccountModal() { document.getElementById('deleteAccountModal').classList.add('hidden'); }
+        // RF-11: PAPELERA DE RECICLAJE Y PURGA
+        function openTrashModal() {
+            document.getElementById('trashModal').classList.remove('hidden');
+            fetchTrashEvents();
+        }
+        function closeTrashModal() { document.getElementById('trashModal').classList.add('hidden'); }
 
-        async function handleDeleteAccount(e) {
-            e.preventDefault();
-            const pass = document.getElementById('deletePasswordInput').value;
-            const errDiv = document.getElementById('deleteAccountError');
-            errDiv.classList.add('hidden');
+        async function fetchTrashEvents() {
+            const list = document.getElementById('trashList');
+            if (!token) return;
 
             try {
-                let res = await fetch('/api/account', {
+                let res = await fetch('/api/events/trash', {
+                    headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+                });
+                res = handleApiResponse(res);
+                if (!res) return;
+
+                const data = await res.json();
+                if (data.success) {
+                    const events = data.data.events || [];
+                    if (events.length === 0) {
+                        list.innerHTML = `<div class="p-6 text-center text-slate-400 text-xs">🎉 La papelera está vacía.</div>`;
+                        return;
+                    }
+
+                    list.innerHTML = events.map(e => `
+                        <div class="rounded-xl border border-white/10 bg-[#1e293b] p-3 flex items-center justify-between gap-3">
+                            <div>
+                                <span class="text-[10px] font-bold text-amber-400 uppercase">${e.type}</span>
+                                <h4 class="text-xs font-bold text-white">${e.title}</h4>
+                                <p class="text-[10px] text-slate-400">Eliminado: ${new Date(e.deleted_at).toLocaleString()}</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="restoreTrashedEvent(${e.id})" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-semibold">♻️ Restaurar</button>
+                                <button onclick="forceDeleteTrashedEvent(${e.id})" class="px-2.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-[10px] font-semibold">🔥 Definitivo</button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                console.error(err);
+                list.innerHTML = `<div class="p-4 text-center text-red-400 text-xs">Error al cargar la papelera.</div>`;
+            }
+        }
+
+        async function restoreTrashedEvent(id) {
+            try {
+                let res = await fetch(`/api/events/${id}/restore`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+                });
+                res = handleApiResponse(res);
+                if (!res) return;
+
+                const data = await res.json();
+                if (data.success) {
+                    await fetchTrashEvents();
+                    await fetchTodayTasks();
+                    await applyFilters();
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        async function forceDeleteTrashedEvent(id) {
+            try {
+                let res = await fetch(`/api/events/${id}/force-delete`, {
                     method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+                });
+                res = handleApiResponse(res);
+                if (!res) return;
+
+                const data = await res.json();
+                if (data.success) {
+                    await fetchTrashEvents();
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        // RF-03: SOLICITUD DE BORRADO DE CUENTA CON CÓDIGO DE VERIFICACIÓN Y COOLDOWN DE 5 MIN
+        let delCodeTimer = null;
+
+        function checkDelCodeCooldown() {
+            const btn = document.getElementById('btnSendDelCode');
+            if (!btn) return;
+            const cooldownUntil = parseInt(localStorage.getItem('del_code_cooldown') || '0');
+            const now = Date.now();
+
+            if (cooldownUntil > now) {
+                btn.disabled = true;
+                updateDelCodeTimer(cooldownUntil);
+            } else {
+                btn.disabled = false;
+                btn.innerText = '📧 Solicitar Código de Verificación al Correo';
+                if (delCodeTimer) clearInterval(delCodeTimer);
+            }
+        }
+
+        function updateDelCodeTimer(cooldownUntil) {
+            const btn = document.getElementById('btnSendDelCode');
+            if (!btn) return;
+            if (delCodeTimer) clearInterval(delCodeTimer);
+
+            delCodeTimer = setInterval(() => {
+                const remainingSec = Math.ceil((cooldownUntil - Date.now()) / 1000);
+                if (remainingSec <= 0) {
+                    clearInterval(delCodeTimer);
+                    localStorage.removeItem('del_code_cooldown');
+                    btn.disabled = false;
+                    btn.innerText = '📧 Solicitar Código de Verificación al Correo';
+                } else {
+                    btn.disabled = true;
+                    const mins = String(Math.floor(remainingSec / 60)).padStart(2, '0');
+                    const secs = String(remainingSec % 60).padStart(2, '0');
+                    btn.innerText = `⏳ Reenviar código en (${mins}:${secs})`;
+                }
+            }, 1000);
+        }
+
+        function openDeleteAccountModal() { 
+            document.getElementById('deleteAccountModal').classList.remove('hidden'); 
+            checkDelCodeCooldown();
+        }
+
+        function closeDeleteAccountModal() { document.getElementById('deleteAccountModal').classList.add('hidden'); }
+
+        async function handleSendDeletionCode() {
+            const pass = document.getElementById('deletePasswordInput').value;
+            const errDiv = document.getElementById('deleteAccountError');
+            const statusDiv = document.getElementById('deleteCodeStatus');
+            errDiv.classList.add('hidden');
+            statusDiv.classList.add('hidden');
+
+            if (!pass) {
+                errDiv.innerText = 'Por favor ingresa tu contraseña primero para solicitar el código.';
+                errDiv.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                let res = await fetch('/api/account/send-deletion-code', {
+                    method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
                     body: JSON.stringify({ password: pass })
                 });
@@ -1049,8 +1243,47 @@
 
                 const data = await res.json();
                 if (data.success) {
+                    statusDiv.innerText = `✅ ${data.message}`;
+                    statusDiv.classList.remove('hidden');
+                    const cooldownUntil = Date.now() + (5 * 60 * 1000);
+                    localStorage.setItem('del_code_cooldown', cooldownUntil);
+                    checkDelCodeCooldown();
+                } else {
+                    errDiv.innerText = data.message || 'Error al enviar código.';
+                    errDiv.classList.remove('hidden');
+                }
+            } catch (err) {
+                errDiv.innerText = 'Error de conexión al solicitar el código.';
+                errDiv.classList.remove('hidden');
+            }
+        }
+
+        async function handleDeleteAccount(e) {
+            e.preventDefault();
+            const pass = document.getElementById('deletePasswordInput').value;
+            const code = document.getElementById('deleteCodeInput').value;
+            const errDiv = document.getElementById('deleteAccountError');
+            errDiv.classList.add('hidden');
+
+            try {
+                let res = await fetch('/api/account', {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ password: pass, verification_code: code })
+                });
+                res = handleApiResponse(res);
+                if (!res) return;
+
+                const data = await res.json();
+                if (data.success) {
+                    closeDeleteAccountModal();
                     alert('Cuenta eliminada de forma permanente.');
-                    handleLogout();
+                    localStorage.clear();
+                    token = null;
+                    user = null;
+                    switchAuthTab('login');
+                    document.getElementById('authModal').classList.remove('hidden');
+                    checkAuth();
                 } else {
                     errDiv.innerText = data.message || 'Error al eliminar cuenta.';
                     errDiv.classList.remove('hidden');

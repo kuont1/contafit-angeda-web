@@ -22,3 +22,4 @@ Artisan::command('test', function () {
 })->purpose('Run the application test suite.');
 
 Schedule::command('notifications:process-pending')->everyMinute();
+Schedule::command('events:purge-trash')->daily();
