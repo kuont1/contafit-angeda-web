@@ -174,7 +174,7 @@ class AuthController extends Controller
         ], 'Ajustes actualizados correctamente.');
     }
 
-    public function deleteAccount(Request $request): JsonResponse
+    public function sendDeletionCode(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'password' => ['required', 'string'],
@@ -185,9 +185,93 @@ class AuthController extends Controller
         }
 
         $user = $request->user();
+        $cooldownKey = "user_del_cooldown_{$user->id}";
+
+        if (\Illuminate\Support\Facades\Cache::has($cooldownKey)) {
+            $secondsLeft = max(1, \Illuminate\Support\Facades\Cache::get($cooldownKey) - time());
+            $mins = ceil($secondsLeft / 60);
+            return $this->errorResponse("Por seguridad, debes esperar {$mins} minuto(s) antes de solicitar otro código de verificación.", null, 429);
+        }
 
         if (! Hash::check($request->input('password'), $user->password)) {
             return $this->errorResponse('La contraseña ingresada es incorrecta.', null, 403);
+        }
+
+        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        \Illuminate\Support\Facades\Cache::put("user_del_code_{$user->id}", $code, now()->addMinutes(10));
+        \Illuminate\Support\Facades\Cache::put($cooldownKey, time() + 300, now()->addMinutes(5));
+
+        $apiKey = config('services.brevo.key');
+        $senderEmail = config('mail.from.address', 'contafitmach@gmail.com');
+        $codeSent = false;
+
+        if ($apiKey) {
+            try {
+                $response = Http::withHeaders([
+                    'api-key' => $apiKey,
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json',
+                ])->post('https://api.brevo.com/v3/smtp/email', [
+                    'sender' => ['name' => 'ContaFit Agenda Security', 'email' => $senderEmail],
+                    'to' => [['email' => $user->email, 'name' => $user->first_name ?? $user->name]],
+                    'subject' => "🔒 Código de Verificación para Eliminar tu Cuenta",
+                    'textContent' => "🔒 Confirmación de Baja de Cuenta\n\nHola {$user->name},\n\nTu código de verificación para eliminar definitivamente tu cuenta de ContaFit Agenda Web es: {$code}\n\nEste código vencerá en 10 minutos. Si no solicitaste esta acción, cambia tu contraseña inmediatamente.\n\nSaludos,\nEquipo de Seguridad de ContaFit Agenda",
+                    'htmlContent' => "<html><body>
+                        <h2>🔒 Código de Verificación de Seguridad</h2>
+                        <p>Hola <strong>{$user->name}</strong>,</p>
+                        <p>Has solicitado eliminar tu cuenta de ContaFit Agenda Web. Tu código de verificación es:</p>
+                        <h1 style='color: #ef4444; font-size: 32px; letter-spacing: 4px;'>{$code}</h1>
+                        <p>Este código caducará en 10 minutos. Si no solicitaste la baja, por favor ignora este mensaje.</p>
+                    </body></html>",
+                ]);
+
+                if ($response->successful()) {
+                    $codeSent = true;
+                }
+            } catch (\Throwable $e) {
+                Log::warning("Error enviando código de borrado vía Brevo API: " . $e->getMessage());
+            }
+        }
+
+        if (! $codeSent) {
+            try {
+                Mail::raw("Tu código de verificación para eliminar tu cuenta es: {$code}", function ($msg) use ($user) {
+                    $msg->to($user->email)->subject("🔒 Código de Verificación para Eliminar tu Cuenta");
+                });
+            } catch (\Throwable $e) {
+                Log::warning("Error enviando código por Mail facade: " . $e->getMessage());
+            }
+        }
+
+        return $this->successResponse([
+            'email' => $user->email,
+        ], "Código de verificación enviado a tu correo ({$user->email}).");
+    }
+
+    public function deleteAccount(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'password' => ['required', 'string'],
+            'verification_code' => ['nullable', 'string'],
+        ]);
+
+        if ($validator->fails()) {
+            return $this->validationErrorResponse($validator->errors()->toArray());
+        }
+
+        $user = $request->user();
+
+        if (! Hash::check($request->input('password'), $user->password)) {
+            return $this->errorResponse('La contraseña ingresada es incorrecta.', null, 403);
+        }
+
+        // Si se envió un código de verificación, validarlo contra Caché
+        if ($request->filled('verification_code')) {
+            $cachedCode = \Illuminate\Support\Facades\Cache::get("user_del_code_{$user->id}");
+            if (! $cachedCode || $cachedCode !== trim((string) $request->input('verification_code'))) {
+                return $this->errorResponse('El código de verificación es incorrecto o ha expirado. Por favor solicita uno nuevo.', null, 422);
+            }
+            \Illuminate\Support\Facades\Cache::forget("user_del_code_{$user->id}");
         }
 
         // Hard delete en cascada de todos los eventos y tokens

@@ -59,12 +59,25 @@ class EventController extends Controller
         ]);
     }
 
-    /**
-     * RF-06 & Store: Crear evento.
-     */
     public function store(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
+        $input = $request->all();
+        if (isset($input['end_at']) && (trim((string) $input['end_at']) === '')) {
+            $input['end_at'] = null;
+        }
+
+        $messages = [
+            'title.required' => 'El título del evento es obligatorio.',
+            'type.required' => 'El tipo de evento es obligatorio.',
+            'type.in' => 'El tipo de evento seleccionado no es válido.',
+            'start_at.required' => 'La fecha y hora de inicio es obligatoria.',
+            'start_at.date' => 'La fecha de inicio debe ser una fecha válida.',
+            'end_at.after_or_equal' => 'La fecha/hora de fin debe ser igual o posterior a la fecha/hora de inicio.',
+            'end_at.date' => 'La fecha de fin debe ser una fecha válida.',
+            'recurrence_frequency.required_if' => 'La frecuencia de repetición es obligatoria para eventos recurrentes.',
+        ];
+
+        $validator = Validator::make($input, [
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'type' => ['required', 'string', 'in:tarea,recordatorio,fecha_importante'],
@@ -75,7 +88,7 @@ class EventController extends Controller
             'is_recurring' => ['nullable', 'boolean'],
             'recurrence_frequency' => ['required_if:is_recurring,true', 'nullable', 'string', 'in:diaria,semanal,mensual,anual'],
             'reminder_minutes_before' => ['nullable', 'integer'],
-        ]);
+        ], $messages);
 
         if ($validator->fails()) {
             return response()->json([
@@ -173,17 +186,33 @@ class EventController extends Controller
             ], 403);
         }
 
-        $validator = Validator::make($request->all(), [
+        $input = $request->all();
+        if (isset($input['end_at']) && (trim((string) $input['end_at']) === '')) {
+            $input['end_at'] = null;
+        }
+
+        $messages = [
+            'title.required' => 'El título del evento es obligatorio.',
+            'type.required' => 'El tipo de evento es obligatorio.',
+            'type.in' => 'El tipo de evento seleccionado no es válido.',
+            'start_at.required' => 'La fecha y hora de inicio es obligatoria.',
+            'start_at.date' => 'La fecha de inicio debe ser una fecha válida.',
+            'end_at.after_or_equal' => 'La fecha/hora de fin debe ser igual o posterior a la fecha/hora de inicio.',
+            'end_at.date' => 'La fecha de fin debe ser una fecha válida.',
+            'recurrence_frequency.required_if' => 'La frecuencia de repetición es obligatoria para eventos recurrentes.',
+        ];
+
+        $validator = Validator::make($input, [
             'title' => ['sometimes', 'required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'type' => ['sometimes', 'required', 'string', 'in:tarea,recordatorio,fecha_importante'],
             'start_at' => ['sometimes', 'required', 'date'],
-            'end_at' => ['nullable', 'date'],
+            'end_at' => ['nullable', 'date', 'after_or_equal:start_at'],
             'color' => ['nullable', 'string', 'max:50'],
             'status' => ['nullable', 'string', 'in:pendiente,en_progreso,completada'],
             'is_recurring' => ['nullable', 'boolean'],
             'recurrence_frequency' => ['required_if:is_recurring,true', 'nullable', 'string', 'in:diaria,semanal,mensual,anual'],
-        ]);
+        ], $messages);
 
         if ($validator->fails()) {
             return response()->json([
@@ -274,6 +303,35 @@ class EventController extends Controller
         ]);
     }
 
+    public function destroy(Request $request, int $id): JsonResponse
+    {
+        $event = Event::find($id);
+
+        if (! $event) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Evento no encontrado.',
+            ], 404);
+        }
+
+        if ($event->user_id !== $request->user()->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permiso para acceder a este evento.',
+            ], 403);
+        }
+
+        // Soft delete children instances too
+        Event::where('recurrence_parent_id', $event->id)->delete();
+
+        $event->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Evento eliminado correctamente.',
+        ]);
+    }
+
     /**
      * RF-06: Ocultar/Eliminar únicamente la ocurrencia de una fecha específica sin borrar la serie padre.
      * DELETE /api/events/{id}/instance
@@ -315,10 +373,10 @@ class EventController extends Controller
 
         $timeStr = Carbon::parse($event->start_at)->toTimeString();
 
-        // Ocultamiento lógico: Crear una marca de exclusión activa (status = 'excluded') asignada a esa fecha concreta
-        Event::create([
+        // Ocultamiento lógico (RF-06): Crear registro de exclusión activo (status = 'excluded')
+        $instance = Event::create([
             'user_id' => $request->user()->id,
-            'title' => $event->title,
+            'title' => $event->title . " (Ocurrencia {$date})",
             'description' => $event->description,
             'type' => $event->type,
             'start_at' => "{$date} {$timeStr}",
@@ -331,6 +389,9 @@ class EventController extends Controller
 
         return response()->json([
             'success' => true,
+            'data' => [
+                'event' => $instance,
+            ],
             'message' => 'Instancia del evento eliminada correctamente.',
         ]);
     }
@@ -381,34 +442,6 @@ class EventController extends Controller
                 'event' => $event->fresh(),
             ],
             'message' => 'Estado de evento actualizado correctamente.',
-        ]);
-    }
-
-    public function destroy(Request $request, int $id): JsonResponse
-    {
-        $event = Event::find($id);
-
-        if (! $event) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Evento no encontrado.',
-            ], 404);
-        }
-
-        if ($event->user_id !== $request->user()->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No tienes permiso para acceder a este evento.',
-            ], 403);
-        }
-
-        // Eliminar (soft delete) también instancias o exclusiones hijas de este evento padre
-        Event::where('recurrence_parent_id', $event->id)->delete();
-        $event->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Evento eliminado correctamente.',
         ]);
     }
 }

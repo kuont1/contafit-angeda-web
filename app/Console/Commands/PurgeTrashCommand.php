@@ -7,7 +7,7 @@ use Illuminate\Console\Command;
 
 class PurgeTrashCommand extends Command
 {
-    protected $signature = 'trash:purge';
+    protected $signature = 'events:purge-trash';
 
     protected $description = 'Purga automáticamente de la base de datos los eventos en papelera que superen los 30 días';
 

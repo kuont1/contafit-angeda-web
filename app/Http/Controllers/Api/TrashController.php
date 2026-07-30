@@ -11,9 +11,24 @@ class TrashController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $trashedEvents = Event::onlyTrashed()
-            ->where('user_id', $request->user()->id)
-            ->orderBy('deleted_at', 'desc')
+        $userId = $request->user()->id;
+
+        // Recuperar eventos eliminados suavemente y marcas de exclusión activas en papelera
+        $trashedEvents = Event::withTrashed()
+            ->where('user_id', $userId)
+            ->where(function ($query) {
+                // Eventos principales borrados suavemente (deleted_at != null y status != excluded)
+                $query->where(function ($q) {
+                    $q->whereNotNull('deleted_at')
+                        ->where('status', '!=', 'excluded');
+                })
+                // O marcas de exclusión visibles en papelera (deleted_at null y status = excluded)
+                ->orWhere(function ($q) {
+                    $q->whereNull('deleted_at')
+                        ->where('status', 'excluded');
+                });
+            })
+            ->orderBy('updated_at', 'desc')
             ->get();
 
         return response()->json([
@@ -27,8 +42,10 @@ class TrashController extends Controller
 
     public function restore(Request $request, int $id): JsonResponse
     {
-        $event = Event::onlyTrashed()
-            ->where('user_id', $request->user()->id)
+        $userId = $request->user()->id;
+
+        $event = Event::withTrashed()
+            ->where('user_id', $userId)
             ->where('id', $id)
             ->first();
 
@@ -39,21 +56,29 @@ class TrashController extends Controller
             ], 404);
         }
 
-        $event->restore();
+        if ($event->status === 'excluded') {
+            // Eliminar definitivamente la marca de exclusión para restablecer la ocurrencia en el calendario
+            $event->forceDelete();
+        } else {
+            $event->restore();
+            Event::onlyTrashed()->where('recurrence_parent_id', $event->id)->restore();
+        }
 
         return response()->json([
             'success' => true,
             'data' => [
                 'event' => $event,
             ],
-            'message' => 'Evento restaurado correctamente.',
+            'message' => 'Evento o fecha restaurada correctamente.',
         ]);
     }
 
     public function forceDelete(Request $request, int $id): JsonResponse
     {
-        $event = Event::onlyTrashed()
-            ->where('user_id', $request->user()->id)
+        $userId = $request->user()->id;
+
+        $event = Event::withTrashed()
+            ->where('user_id', $userId)
             ->where('id', $id)
             ->first();
 
@@ -64,7 +89,13 @@ class TrashController extends Controller
             ], 404);
         }
 
-        $event->forceDelete();
+        if ($event->status === 'excluded') {
+            // Se envía a soft-delete (deleted_at = now()) para desaparecer de la papelera manteniendo la fecha oculta permanentemente
+            $event->delete();
+        } else {
+            Event::withTrashed()->where('recurrence_parent_id', $event->id)->forceDelete();
+            $event->forceDelete();
+        }
 
         return response()->json([
             'success' => true,
