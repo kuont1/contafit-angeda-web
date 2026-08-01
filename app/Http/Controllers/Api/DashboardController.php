@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Event;
+use App\Services\NotificationService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,7 +14,10 @@ class DashboardController extends Controller
     public function today(Request $request): JsonResponse
     {
         $user = $request->user();
-        
+
+        // Procesar notificaciones pendientes acumuladas
+        (new NotificationService)->processPendingNotifications();
+
         $dateInput = $request->query('date');
         $today = $dateInput ? Carbon::parse($dateInput) : Carbon::today('America/Guayaquil');
         $includeCompleted = $request->boolean('include_completed', false);

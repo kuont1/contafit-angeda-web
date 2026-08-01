@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Mail;
 class SendPendingNotificationsCommand extends Command
 {
     protected $signature = 'notifications:send';
+
     protected $description = 'Procesa y envía las notificaciones por correo electrónico pendientes vía Brevo/SMTP';
 
     public function handle(): int
@@ -25,7 +26,8 @@ class SendPendingNotificationsCommand extends Command
             ->get();
 
         if ($pendingNotifications->isEmpty()) {
-            $this->info("No hay notificaciones pendientes por enviar.");
+            $this->info('No hay notificaciones pendientes por enviar.');
+
             return Command::SUCCESS;
         }
 
@@ -38,6 +40,7 @@ class SendPendingNotificationsCommand extends Command
             if (! $event || ! $event->user || ! $event->user->email) {
                 $notification->update(['status' => 'fallida']);
                 $failedCount++;
+
                 continue;
             }
 
@@ -52,14 +55,15 @@ class SendPendingNotificationsCommand extends Command
                 $this->info("✔ Notificación enviada a {$event->user->email} para el evento: {$event->title}");
                 $sentCount++;
             } catch (\Throwable $e) {
-                Log::error("Error al enviar notificación ID {$notification->id}: " . $e->getMessage());
+                Log::error("Error al enviar notificación ID {$notification->id}: ".$e->getMessage());
                 $notification->update(['status' => 'fallida']);
                 $failedCount++;
-                $this->error("✖ Error al enviar a {$event->user->email}: " . $e->getMessage());
+                $this->error("✖ Error al enviar a {$event->user->email}: ".$e->getMessage());
             }
         }
 
         $this->info("Proceso completado. Enviadas: {$sentCount}, Fallidas: {$failedCount}");
+
         return Command::SUCCESS;
     }
 }

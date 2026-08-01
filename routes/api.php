@@ -10,11 +10,11 @@ use Illuminate\Support\Facades\Route;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware('jwt.auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
     Route::patch('/user/settings', [AuthController::class, 'updateSettings']);
-    
+
     // RF-03: Eliminación Definitiva de Cuenta (Rutas /profile y /account)
     Route::post('/account/send-deletion-code', [AuthController::class, 'sendDeletionCode']);
     Route::delete('/account', [AuthController::class, 'deleteAccount']);
@@ -23,7 +23,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // RF-11: Papelera de Reciclaje y Purga (Rutas /events/trash y /trash)
     Route::get('/events/trash', [TrashController::class, 'index']);
     Route::get('/trash', [TrashController::class, 'index']);
-    
+
     Route::post('/events/{id}/restore', [TrashController::class, 'restore']);
     Route::post('/trash/{id}/restore', [TrashController::class, 'restore']);
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Jobs\SendNotificationJob;
 use App\Models\Event;
 use App\Models\Notification;
+use App\Services\NotificationService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,6 +19,9 @@ class EventController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        // Procesar notificaciones pendientes acumuladas
+        (new NotificationService)->processPendingNotifications();
+
         $query = Event::where('user_id', $request->user()->id);
 
         // Búsqueda por palabra clave en title o description (LIKE / ILIKE)
@@ -25,7 +29,7 @@ class EventController extends Controller
             $search = $request->query('search');
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'LIKE', "%{$search}%")
-                  ->orWhere('description', 'LIKE', "%{$search}%");
+                    ->orWhere('description', 'LIKE', "%{$search}%");
             });
         }
 
@@ -116,20 +120,22 @@ class EventController extends Controller
             'reminder_minutes_before' => $request->input('reminder_minutes_before'),
         ]);
 
-        // Programar notificación automática y despachar Job asíncrono (RF-10 / ADR-006)
-        $scheduledAt = (new \App\Services\NotificationService())->calculateScheduledTime($event);
+        // Programar notificación automática y despachar (RF-10 / ADR-006)
+        $notificationService = new NotificationService;
+        $scheduledAt = $notificationService->calculateScheduledTime($event);
 
-        Notification::create([
-            'event_id' => $event->id,
-            'user_id' => $event->user_id,
-            'scheduled_at' => $scheduledAt,
-            'status' => 'pendiente',
-        ]);
+        Notification::updateOrCreate(
+            ['event_id' => $event->id, 'user_id' => $event->user_id],
+            [
+                'scheduled_at' => $scheduledAt,
+                'status' => 'pendiente',
+            ]
+        );
 
-        if ($scheduledAt->isFuture()) {
-            SendNotificationJob::dispatch($event)->delay($scheduledAt);
-        } else {
-            SendNotificationJob::dispatch($event);
+        SendNotificationJob::dispatch($event)->delay($scheduledAt);
+
+        if ($scheduledAt->isPast() || $scheduledAt->lessThanOrEqualTo(now()->addMinute())) {
+            $notificationService->sendAlert($event);
         }
 
         return response()->json([
@@ -141,6 +147,9 @@ class EventController extends Controller
         ], 201);
     }
 
+    /**
+     * Display the specified resource.
+     */
     public function show(Request $request, int $id): JsonResponse
     {
         $event = Event::find($id);
@@ -164,10 +173,13 @@ class EventController extends Controller
             'data' => [
                 'event' => $event,
             ],
-            'message' => 'Evento obtenido correctamente.',
+            'message' => 'Evento recuperado correctamente.',
         ]);
     }
 
+    /**
+     * Update the specified resource in storage.
+     */
     public function update(Request $request, int $id): JsonResponse
     {
         $event = Event::find($id);
@@ -187,16 +199,22 @@ class EventController extends Controller
         }
 
         $input = $request->all();
-        if (isset($input['end_at']) && (trim((string) $input['end_at']) === '')) {
-            $input['end_at'] = null;
+        if (isset($input['start_at']) && isset($input['end_at'])) {
+            if ($input['end_at'] < $input['start_at']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error de validación.',
+                    'data' => [
+                        'errors' => [
+                            'end_at' => ['La fecha/hora de fin debe ser igual o posterior a la fecha/hora de inicio.'],
+                        ],
+                    ],
+                ], 422);
+            }
         }
 
         $messages = [
-            'title.required' => 'El título del evento es obligatorio.',
-            'type.required' => 'El tipo de evento es obligatorio.',
-            'type.in' => 'El tipo de evento seleccionado no es válido.',
-            'start_at.required' => 'La fecha y hora de inicio es obligatoria.',
-            'start_at.date' => 'La fecha de inicio debe ser una fecha válida.',
+            'type.in' => 'El tipo de evento debe ser uno de: tarea, recordatorio, fecha_importante.',
             'end_at.after_or_equal' => 'La fecha/hora de fin debe ser igual o posterior a la fecha/hora de inicio.',
             'end_at.date' => 'La fecha de fin debe ser una fecha válida.',
             'recurrence_frequency.required_if' => 'La frecuencia de repetición es obligatoria para eventos recurrentes.',
@@ -212,6 +230,7 @@ class EventController extends Controller
             'status' => ['nullable', 'string', 'in:pendiente,en_progreso,completada'],
             'is_recurring' => ['nullable', 'boolean'],
             'recurrence_frequency' => ['required_if:is_recurring,true', 'nullable', 'string', 'in:diaria,semanal,mensual,anual'],
+            'reminder_minutes_before' => ['nullable', 'integer', 'min:0'],
         ], $messages);
 
         if ($validator->fails()) {
@@ -226,8 +245,26 @@ class EventController extends Controller
 
         $event->update($request->only([
             'title', 'description', 'type', 'start_at', 'end_at', 'color', 'status',
-            'is_recurring', 'recurrence_frequency'
+            'is_recurring', 'recurrence_frequency', 'reminder_minutes_before',
         ]));
+
+        // Actualizar o reprogramar notificación para el evento
+        $notificationService = new NotificationService;
+        $scheduledAt = $notificationService->calculateScheduledTime($event);
+
+        Notification::updateOrCreate(
+            ['event_id' => $event->id, 'user_id' => $event->user_id],
+            [
+                'scheduled_at' => $scheduledAt,
+                'status' => 'pendiente',
+            ]
+        );
+
+        SendNotificationJob::dispatch($event)->delay($scheduledAt);
+
+        if ($scheduledAt->isPast() || $scheduledAt->lessThanOrEqualTo(now()->addMinute())) {
+            $notificationService->sendAlert($event);
+        }
 
         return response()->json([
             'success' => true,
@@ -376,11 +413,11 @@ class EventController extends Controller
         // Ocultamiento lógico (RF-06): Crear registro de exclusión activo (status = 'excluded')
         $instance = Event::create([
             'user_id' => $request->user()->id,
-            'title' => $event->title . " (Ocurrencia {$date})",
+            'title' => $event->title." (Ocurrencia {$date})",
             'description' => $event->description,
             'type' => $event->type,
             'start_at' => "{$date} {$timeStr}",
-            'end_at' => $event->end_at ? "{$date} " . Carbon::parse($event->end_at)->toTimeString() : null,
+            'end_at' => $event->end_at ? "{$date} ".Carbon::parse($event->end_at)->toTimeString() : null,
             'color' => $event->color,
             'status' => 'excluded',
             'is_recurring' => false,

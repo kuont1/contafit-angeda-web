@@ -28,6 +28,7 @@ class NotificationService implements NotificationServiceInterface
 
             if (! $user || ! $user->email) {
                 Log::warning("No se pudo enviar notificación para el evento ID {$event->id}: usuario sin email.");
+
                 return false;
             }
 
@@ -46,24 +47,24 @@ class NotificationService implements NotificationServiceInterface
                         'sender' => ['name' => 'ContaFit Agenda', 'email' => $senderEmail],
                         'to' => [['email' => $user->email, 'name' => $user->first_name ?? $user->name]],
                         'subject' => "⏰ Recordatorio: {$event->title}",
-                        'textContent' => "⏰ Recordatorio de Evento - ContaFit Agenda\n\nHola " . ($user->first_name ?? $user->name) . ",\n\nEste es un recordatorio automático para tu evento '{$event->title}' programado para el {$event->start_at}.\n\nDescripción: " . ($event->description ?? 'Sin descripción') . "\n\nSaludos,\nEquipo ContaFit Agenda Web",
-                        'htmlContent' => "<html><body>
+                        'textContent' => "⏰ Recordatorio de Evento - ContaFit Agenda\n\nHola ".($user->first_name ?? $user->name).",\n\nEste es un recordatorio automático para tu evento '{$event->title}' programado para el {$event->start_at}.\n\nDescripción: ".($event->description ?? 'Sin descripción')."\n\nSaludos,\nEquipo ContaFit Agenda Web",
+                        'htmlContent' => '<html><body>
                             <h2>⏰ Recordatorio de Evento - ContaFit Agenda</h2>
-                            <p>Hola <strong>" . ($user->first_name ?? $user->name) . "</strong>,</p>
+                            <p>Hola <strong>'.($user->first_name ?? $user->name)."</strong>,</p>
                             <p>Este es un recordatorio automático para tu evento <strong>{$event->title}</strong> programado para el <strong>{$event->start_at}</strong>.</p>
-                            <p><strong>Descripción:</strong> " . ($event->description ?? 'Sin descripción') . "</p>
+                            <p><strong>Descripción:</strong> ".($event->description ?? 'Sin descripción').'</p>
                             <br><p>Saludos,<br>Equipo ContaFit Agenda Web</p>
-                        </body></html>",
+                        </body></html>',
                     ]);
 
                     if ($response->successful()) {
                         $sentSuccess = true;
-                        Log::info("Notificación enviada a {$user->email} vía Brevo API v3 (Message ID: " . $response->json('messageId') . ")");
+                        Log::info("Notificación enviada a {$user->email} vía Brevo API v3 (Message ID: ".$response->json('messageId').')');
                     } else {
-                        Log::warning("Error respuesta Brevo API: " . $response->body());
+                        Log::warning('Error respuesta Brevo API: '.$response->body());
                     }
                 } catch (\Throwable $brevoErr) {
-                    Log::warning("Excepción al contactar Brevo API: " . $brevoErr->getMessage());
+                    Log::warning('Excepción al contactar Brevo API: '.$brevoErr->getMessage());
                 }
             }
 
@@ -71,14 +72,14 @@ class NotificationService implements NotificationServiceInterface
             if (! $sentSuccess) {
                 try {
                     Mail::raw(
-                        "Hola {$user->first_name},\n\nEste es un recordatorio automático para tu evento '{$event->title}' programado para el {$event->start_at}.\n\nDescripción: " . ($event->description ?? 'Sin descripción') . "\n\nSaludos,\nEquipo ContaFit Agenda",
+                        "Hola {$user->first_name},\n\nEste es un recordatorio automático para tu evento '{$event->title}' programado para el {$event->start_at}.\n\nDescripción: ".($event->description ?? 'Sin descripción')."\n\nSaludos,\nEquipo ContaFit Agenda",
                         function ($message) use ($user, $event) {
                             $message->to($user->email)
-                                    ->subject("⏰ Recordatorio: {$event->title}");
+                                ->subject("⏰ Recordatorio: {$event->title}");
                         }
                     );
                 } catch (\Throwable $mailErr) {
-                    Log::warning("No se pudo entregar correo por Mail facade a {$user->email}: " . $mailErr->getMessage());
+                    Log::warning("No se pudo entregar correo por Mail facade a {$user->email}: ".$mailErr->getMessage());
                 }
             }
 
@@ -95,7 +96,29 @@ class NotificationService implements NotificationServiceInterface
             return true;
         } catch (\Throwable $e) {
             Log::error("Error al enviar alerta del evento ID {$event->id}: {$e->getMessage()}");
+
             return false;
         }
+    }
+
+    public function processPendingNotifications(): int
+    {
+        $pending = NotificationModel::where('status', 'pendiente')
+            ->where('scheduled_at', '<=', Carbon::now())
+            ->with('event.user')
+            ->get();
+
+        $processed = 0;
+        foreach ($pending as $notification) {
+            if ($notification->event && $notification->event->user) {
+                if ($this->sendAlert($notification->event)) {
+                    $processed++;
+                }
+            } else {
+                $notification->update(['status' => 'fallida']);
+            }
+        }
+
+        return $processed;
     }
 }

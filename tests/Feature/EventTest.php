@@ -60,12 +60,12 @@ class EventTest extends TestCase
 
         $this->actingAs($intruder, 'sanctum');
 
-        $showResponse = $this->getJson('/api/events/' . $event->id);
+        $showResponse = $this->getJson('/api/events/'.$event->id);
         $showResponse->assertStatus(403)
             ->assertJsonPath('success', false)
             ->assertJsonPath('message', 'No tienes permiso para acceder a este evento.');
 
-        $updateResponse = $this->patchJson('/api/events/' . $event->id, [
+        $updateResponse = $this->patchJson('/api/events/'.$event->id, [
             'title' => 'Intento de edición',
         ]);
 
@@ -91,7 +91,7 @@ class EventTest extends TestCase
             'completed_at' => null,
         ]);
 
-        $response = $this->deleteJson('/api/events/' . $event->id);
+        $response = $this->deleteJson('/api/events/'.$event->id);
 
         $response->assertOk()
             ->assertJsonPath('success', true)

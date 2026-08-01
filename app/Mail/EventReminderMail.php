@@ -23,7 +23,7 @@ class EventReminderMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Recordatorio de Evento: ' . $this->event->title,
+            subject: 'Recordatorio de Evento: '.$this->event->title,
         );
     }
 
@@ -37,9 +37,9 @@ class EventReminderMail extends Mailable
                 <p>Tienes un evento programado próximamente en tu agenda:</p>
                 <div style='background-color: #f9fafb; padding: 15px; border-left: 4px solid {$this->event->color}; border-radius: 4px; margin: 15px 0;'>
                     <h3 style='margin-top: 0;'>{$this->event->title}</h3>
-                    <p><strong>Tipo:</strong> " . ucfirst($this->event->type) . "</p>
+                    <p><strong>Tipo:</strong> ".ucfirst($this->event->type)."</p>
                     <p><strong>Fecha / Hora:</strong> {$this->event->start_at}</p>
-                    " . ($this->event->description ? "<p><strong>Descripción:</strong> {$this->event->description}</p>" : "") . "
+                    ".($this->event->description ? "<p><strong>Descripción:</strong> {$this->event->description}</p>" : '')."
                 </div>
                 <p style='color: #6b7280; font-size: 0.9em;'>Este es un mensaje automático enviado desde tu agenda personal Contafit.</p>
             </div>

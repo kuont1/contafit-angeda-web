@@ -42,7 +42,7 @@ class NotificationTest extends TestCase
         $this->artisan('notifications:send')
             ->assertExitCode(0);
 
-        Mail::assertSent(EventReminderMail::class, function ($mail) use ($user, $event) {
+        Mail::assertSent(EventReminderMail::class, function ($mail) use ($event) {
             return $mail->hasTo('test@example.com') &&
                    $mail->event->id === $event->id;
         });

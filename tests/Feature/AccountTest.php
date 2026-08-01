@@ -7,7 +7,6 @@ use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
-
 use Tests\TestCase;
 
 class AccountTest extends TestCase
@@ -52,6 +51,8 @@ class AccountTest extends TestCase
         $user = User::factory()->create([
             'password' => bcrypt('Secret123!'),
         ]);
+
+        Cache::forget("user_del_cooldown_{$user->id}");
 
         // Solicitar código de verificación
         $codeRes = $this->actingAs($user)->postJson('/api/account/send-deletion-code', [
