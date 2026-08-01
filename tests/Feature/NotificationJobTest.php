@@ -27,7 +27,7 @@ class NotificationJobTest extends TestCase
         ]);
 
         $response->assertStatus(201)
-                 ->assertJsonPath('success', true);
+            ->assertJsonPath('success', true);
 
         // Verificar que el Job de notificación asíncrona se haya encolado
         Queue::assertPushed(SendNotificationJob::class, function ($job) {

@@ -108,7 +108,7 @@ class DashboardTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'data.events');
 
-        $statusResponse = $this->patchJson('/api/events/' . $event->id . '/status', [
+        $statusResponse = $this->patchJson('/api/events/'.$event->id.'/status', [
             'status' => 'completada',
         ]);
 
