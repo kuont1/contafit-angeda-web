@@ -3,72 +3,110 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ config('app.name', 'ContaFit Agenda') }} | Dashboard</title>
+    <title>{{ config('app.name', 'ContaFit Agenda') }} | Agenda Corporativa</title>
 
+    <!-- FUENTES OFICIALES (SANS-SERIF MODERNA CORPORATIVA) -->
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700,800&display=swap" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
+        :root {
+            --color-navy-primary: #0B2545;
+            --color-navy-dark: #0A192F;
+            --color-teal-growth: #00A896;
+            --color-teal-hover: #028090;
+            --color-bg-clean: #0F172A;
+            --color-card-bg: #1E293B;
+        }
+
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        
         .card-panel {
-            background-color: #111827;
+            background-color: #1E293B;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
+        .card-panel-active {
+            border-color: rgba(0, 168, 150, 0.4);
+        }
         .modal-bg {
-            background-color: rgba(0, 0, 0, 0.8);
+            background-color: rgba(10, 25, 47, 0.85);
+            backdrop-filter: blur(8px);
         }
         .modal-box {
-            background-color: #111827;
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            background-color: #1E293B;
+            border: 1px solid rgba(0, 168, 150, 0.3);
         }
+
+        /* CUSTOM SCROLLBAR */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 168, 150, 0.4); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0, 168, 150, 0.7); }
     </style>
 </head>
-<body class="font-sans text-slate-100 bg-[#0b0f17] min-h-screen">
+<body class="font-sans text-slate-100 bg-[#0B1320] min-h-screen">
 
-    <!-- BARRA SUPERIOR (RF-01, RF-02, RF-03) -->
-    <nav class="w-full bg-[#0f172a] border-b border-white/10 px-6 py-3 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-            <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-sky-400 flex items-center justify-center font-bold text-slate-950 text-lg">C</div>
-            <span class="font-bold text-lg text-white tracking-tight">ContaFit Agenda Web</span>
+    <!-- CONTENEDOR TOAST DE NOTIFICACIONES CORPORATIVAS CONTAFIT (UI/UX) -->
+    <div id="toastContainer" class="fixed top-5 right-5 z-[100] flex flex-col gap-2.5 pointer-events-none max-w-sm w-full px-4"></div>
+
+    <!-- BARRA SUPERIOR CORPORATIVA CON LOGOTIPO CONTAFIT -->
+    <nav class="w-full bg-[#0B2545] border-b border-[#00A896]/30 px-6 py-3.5 flex items-center justify-between shadow-lg">
+        <div class="flex items-center gap-3.5">
+            <!-- LOGOTIPO VECTORIAL ISOTIPO CONTAFIT (FLECHA AZUL ASCENDENTE Y CÍRCULO TURQUESA) -->
+            <div class="h-10 w-10 rounded-2xl bg-white flex items-center justify-center p-1.5 shadow-md border border-[#00A896]/40">
+                <svg viewBox="0 0 100 100" class="w-full h-full">
+                    <!-- Círculo Turquesa -->
+                    <circle cx="50" cy="50" r="42" fill="none" stroke="#00A896" stroke-width="8" />
+                    <!-- Barras de Gráfico Turquesa -->
+                    <rect x="34" y="45" width="8" height="25" fill="#00A896" rx="2" />
+                    <rect x="46" y="35" width="8" height="35" fill="#00A896" rx="2" />
+                    <rect x="58" y="48" width="8" height="22" fill="#00A896" rx="2" />
+                    <!-- Flecha Ascendente Azul Principal -->
+                    <path d="M 22 65 L 42 45 L 55 56 L 78 26 L 62 26 L 78 26 L 78 42" fill="none" stroke="#0B2545" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="font-extrabold text-lg text-white tracking-tight">CONTAFIT</span>
+                    <span class="text-xs font-semibold text-[#00A896] uppercase tracking-widest bg-[#00A896]/15 px-2 py-0.5 rounded-md border border-[#00A896]/30">Contadores</span>
+                </div>
+                <p class="text-[10px] text-slate-300 font-medium tracking-wide">MACHALA - ECUADOR</p>
+            </div>
         </div>
         
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 relative">
             <div id="authHeader" class="flex items-center gap-3"></div>
         </div>
     </nav>
 
     <!-- DASHBOARD PRINCIPAL -->
     <div class="p-4 lg:p-6">
-        <div class="mx-auto flex min-h-[calc(100vh-6rem)] max-w-[1600px] flex-col gap-5 xl:flex-row">
+        <div class="mx-auto flex min-h-[calc(100vh-6.5rem)] max-w-[1600px] flex-col gap-5 xl:flex-row">
             
-            <!-- SIDEBAR IZQUIERDO: DASHBOARD DE TAREAS Y RECORDATORIOS DEL DÍA (RF-08) -->
-            <aside class="w-full xl:w-[380px] flex flex-col gap-5 rounded-3xl card-panel p-5 shadow-xl">
+            <!-- SIDEBAR IZQUIERDO: DASHBOARD DE TAREAS Y RECORDATORIOS DEL DÍA -->
+            <aside class="w-full xl:w-[380px] flex flex-col gap-5 rounded-3xl card-panel p-5 shadow-xl border border-white/10">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-wider text-indigo-400">DASHBOARD DIARIO (RF-08)</p>
-                        <h1 class="mt-1 text-2xl font-bold text-white">Tareas del Día</h1>
-                    </div>
-                    <!-- BOTÓN INTERACTIVO BADGE DÍA ACTUAL -->
-                    <div id="todayDayBadge" onclick="goToToday()" class="grid h-11 w-11 place-items-center rounded-2xl bg-indigo-600 font-bold text-white shadow-md cursor-pointer hover:bg-indigo-500 transition" title="Ir al día de hoy en el calendario">
-                        {{ date('d') }}
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-[#00A896]">DASHBOARD DIARIO</p>
+                        <h1 class="mt-0.5 text-2xl font-extrabold text-white">Tareas del Día</h1>
                     </div>
                 </div>
 
-                <button onclick="openCreateModal()" class="w-full flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 py-3 text-sm font-semibold text-white transition shadow-md">
-                    <span>+</span> Crear Evento / Tarea
+                <button onclick="openCreateModal()" title="Crear un nuevo evento, tarea o recordatorio en la agenda" class="w-full flex items-center justify-center gap-2 rounded-xl bg-[#00A896] hover:bg-[#028090] py-3 text-xs font-bold text-slate-950 hover:text-white transition-all shadow-lg shadow-[#00A896]/20">
+                    <span class="text-base font-black">+</span> Crear Evento / Tarea
                 </button>
 
-                <!-- LISTA CHECKLIST DE TAREAS Y RECORDATORIOS DE HOY (RF-08) -->
+                <!-- LISTA CHECKLIST DE TAREAS Y RECORDATORIOS DE HOY -->
                 <section class="flex-1 overflow-y-auto max-h-[460px] space-y-3">
-                    <div class="flex items-center justify-between text-sm border-b border-white/10 pb-2">
-                        <h2 class="font-semibold text-white">Pendientes de hoy</h2>
+                    <div class="flex items-center justify-between text-xs border-b border-white/10 pb-2.5">
+                        <h2 class="font-bold text-white">Pendientes de Hoy</h2>
                         <div class="flex items-center gap-2">
-                            <label class="text-[10px] text-slate-400 flex items-center gap-1 cursor-pointer">
-                                <input type="checkbox" id="showCompletedToggle" onchange="fetchTodayTasks()" class="rounded border-white/20 text-indigo-600 focus:ring-0">
+                            <label class="text-[11px] text-slate-300 flex items-center gap-1.5 cursor-pointer" title="Mostrar u ocultar tareas ya completadas">
+                                <input type="checkbox" id="showCompletedToggle" onchange="fetchTodayTasks()" class="rounded border-white/20 text-[#00A896] focus:ring-[#00A896]">
                                 Ver completadas
                             </label>
-                            <span id="taskCountBadge" class="rounded-full bg-indigo-500/20 text-indigo-300 px-2 py-0.5 text-[11px] font-semibold">0 pendientes</span>
+                            <span id="taskCountBadge" class="rounded-full bg-[#00A896]/20 text-[#00A896] border border-[#00A896]/40 px-2.5 py-0.5 text-[11px] font-bold">0 pendientes</span>
                         </div>
                     </div>
 
@@ -77,43 +115,43 @@
                     </div>
                 </section>
 
-                <!-- RESUMEN DE FERIADOS DE ECUADOR (RF-09) -->
-                <section class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <!-- PRÓXIMOS FERIADOS DE ECUADOR (PRÓXIMOS 6 MESES) -->
+                <section class="rounded-2xl border border-[#00A896]/30 bg-[#0B2545]/40 p-4">
                     <div class="flex items-center justify-between mb-2">
-                        <p class="text-xs font-semibold uppercase tracking-wider text-emerald-400">🇪🇨 FERIADOS DE ECUADOR (RF-09)</p>
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-[#00A896]">🇪🇨 PRÓXIMOS FERIADOS</p>
                     </div>
-                    <div id="holidaysWidget" class="text-xs text-slate-300 space-y-1.5">
-                        <div class="text-slate-400 text-[11px]">Cargando feriados...</div>
+                    <div id="holidaysWidget" class="text-xs text-slate-200 space-y-2">
+                        <div class="text-slate-400 text-[11px]">Cargando próximos feriados...</div>
                     </div>
                 </section>
             </aside>
 
-            <!-- CALENDARIO PRINCIPAL Y FILTROS (RF-04, RF-05, RF-06, RF-07) -->
-            <main class="flex-1 flex flex-col gap-4 rounded-3xl card-panel p-5 shadow-xl min-w-0">
+            <!-- CALENDARIO PRINCIPAL Y FILTROS -->
+            <main class="flex-1 flex flex-col gap-4 rounded-3xl card-panel p-5 shadow-xl min-w-0 border border-white/10">
                 
-                <!-- CONTROLES Y BARRA DE FILTROS EN TIEMPO REAL (RF-07) -->
+                <!-- CONTROLES Y BARRA DE FILTROS EN TIEMPO REAL -->
                 <header class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between border-b border-white/10 pb-4">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-wider text-indigo-400">Módulo 2: Calendario y Eventos</p>
+                        <p class="text-[11px] font-bold uppercase tracking-wider text-[#00A896]">CALENDARIO Y EVENTOS</p>
                         <div class="mt-1 flex items-center gap-3">
-                            <button onclick="navigateMonth(-1)" class="h-9 w-9 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold transition flex items-center justify-center">‹</button>
-                            <h2 id="calendarTitle" class="text-2xl font-bold text-white min-w-[220px] text-center">Mes {{ date('Y') }}</h2>
-                            <button onclick="navigateMonth(1)" class="h-9 w-9 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold transition flex items-center justify-center">›</button>
+                            <button onclick="navigateMonth(-1)" title="Mes anterior" class="h-9 w-9 rounded-xl bg-white/5 hover:bg-[#00A896]/20 text-white font-bold transition flex items-center justify-center border border-white/10">‹</button>
+                            <h2 id="calendarTitle" class="text-2xl font-extrabold text-white min-w-[240px] text-center">Mes {{ date('Y') }}</h2>
+                            <button onclick="navigateMonth(1)" title="Mes siguiente" class="h-9 w-9 rounded-xl bg-white/5 hover:bg-[#00A896]/20 text-white font-bold transition flex items-center justify-center border border-white/10">›</button>
                         </div>
                     </div>
 
-                    <!-- FILTROS Y BÚSQUEDA EN TIEMPO REAL (RF-07) -->
+                    <!-- FILTROS Y BÚSQUEDA EN TIEMPO REAL -->
                     <div class="flex flex-wrap items-center gap-3">
-                        <input type="text" id="searchInput" oninput="applyFilters()" placeholder="🔎 Buscar evento o nota..." class="rounded-xl border border-white/10 bg-[#111827] px-3 py-2 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 min-w-[200px]">
+                        <input type="text" id="searchInput" oninput="applyFilters()" title="Buscar eventos por título, nota o descripción" placeholder="🔎 Buscar evento o nota..." class="rounded-xl border border-white/10 bg-[#0B1320] px-3.5 py-2 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-[#00A896] focus:ring-1 focus:ring-[#00A896] min-w-[200px]">
 
-                        <select id="typeFilter" onchange="applyFilters()" class="rounded-xl border border-white/10 bg-[#1e293b] px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+                        <select id="typeFilter" onchange="applyFilters()" title="Filtrar eventos por categoría" class="rounded-xl border border-white/10 bg-[#0B2545] px-3.5 py-2 text-xs text-white focus:outline-none focus:border-[#00A896]">
                             <option value="">Todas las Categorías</option>
                             <option value="tarea">📝 Tarea</option>
                             <option value="recordatorio">⏰ Recordatorio</option>
                             <option value="fecha_importante">📌 Fecha Importante</option>
                         </select>
 
-                        <select id="statusFilter" onchange="applyFilters()" class="rounded-xl border border-white/10 bg-[#1e293b] px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+                        <select id="statusFilter" onchange="applyFilters()" title="Filtrar eventos por estado de avance" class="rounded-xl border border-white/10 bg-[#0B2545] px-3.5 py-2 text-xs text-white focus:outline-none focus:border-[#00A896]">
                             <option value="">Todos los Estados</option>
                             <option value="pendiente">⏳ Pendiente</option>
                             <option value="en_progreso">🚀 En Progreso</option>
@@ -124,7 +162,7 @@
 
                 <!-- GRID DEL CALENDARIO MENSUAL -->
                 <section class="flex-1 flex flex-col">
-                    <div class="grid grid-cols-7 gap-2 pb-2 text-center text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    <div class="grid grid-cols-7 gap-2 pb-2 text-center text-xs font-bold text-slate-300 uppercase tracking-wider">
                         <span>Dom</span><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span>
                     </div>
 
@@ -136,15 +174,15 @@
         </div>
     </div>
 
-    <!-- MODAL DE DETALLE DE DÍA Y GESTIÓN DE EVENTOS (RF-05, RF-06, RF-09) -->
+    <!-- MODAL DE DETALLE DE DÍA Y GESTIÓN DE EVENTOS -->
     <div id="dayViewModal" class="fixed inset-0 z-50 flex items-center justify-center modal-bg p-4 hidden">
         <div class="w-full max-w-xl rounded-3xl modal-box p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
             <div class="flex items-center justify-between border-b border-white/10 pb-3">
                 <div>
-                    <h3 id="dayViewTitle" class="text-base font-bold text-white">📅 Eventos del Día</h3>
-                    <p class="text-xs text-slate-400">Ver, editar o agregar eventos para esta fecha</p>
+                    <h3 id="dayViewTitle" class="text-base font-extrabold text-white">📅 Eventos del Día</h3>
+                    <p class="text-xs text-slate-300">Detalles de eventos para la fecha seleccionada</p>
                 </div>
-                <button onclick="closeDayViewModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+                <button onclick="closeDayViewModal()" title="Cerrar ventana" class="text-slate-400 hover:text-white text-lg">✕</button>
             </div>
 
             <div id="dayViewContent" class="flex-1 overflow-y-auto space-y-3 pr-1">
@@ -152,107 +190,139 @@
             </div>
 
             <div class="border-t border-white/10 pt-3 flex justify-end gap-3">
-                <button onclick="closeDayViewModal()" class="px-4 py-2 rounded-xl border border-white/10 bg-white/5 text-xs text-slate-300">Cerrar</button>
-                <button id="addEventOnDayBtn" onclick="openCreateModalFromDayView()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white transition">+ Añadir Evento en esta Fecha</button>
+                <button onclick="closeDayViewModal()" class="px-4 py-2 rounded-xl border border-white/10 bg-white/5 text-xs text-slate-300 hover:bg-white/10">Cerrar</button>
+                <button id="addEventOnDayBtn" onclick="openCreateModalFromDayView()" class="px-4 py-2 rounded-xl bg-[#00A896] hover:bg-[#028090] text-xs font-bold text-slate-950 hover:text-white transition shadow-md">+ Añadir Evento en esta Fecha</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL CONFIRMACIÓN BORRADO DE EVENTO RECURRENTE (RF-06) -->
+    <!-- MODAL CONFIRMACIÓN BORRADO DE EVENTO RECURRENTE -->
     <div id="deleteRecurringModal" class="fixed inset-0 z-50 flex items-center justify-center modal-bg p-4 hidden">
         <div class="w-full max-w-md rounded-3xl modal-box p-6 shadow-2xl space-y-4">
             <div class="flex items-center justify-between border-b border-white/10 pb-3">
-                <h3 class="text-base font-bold text-amber-400">Opciones de Eliminación de Evento (RF-06)</h3>
+                <h3 class="text-base font-extrabold text-white">Eliminar Evento</h3>
                 <button onclick="closeDeleteRecurringModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
             </div>
 
-            <p class="text-xs text-slate-300">¿Cómo deseas proceder con la eliminación de este evento?</p>
+            <p class="text-xs text-slate-300">¿Qué deseas eliminar de la agenda?</p>
 
-            <div class="space-y-2 pt-2">
-                <button onclick="confirmDeleteRecurringInstance()" class="w-full py-3 px-4 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-200 text-xs font-semibold text-left transition flex items-center justify-between">
-                    <span>1. Eliminar SOLO la ocurrencia de esta fecha</span>
-                    <span>→</span>
+            <div class="space-y-2.5 pt-1">
+                <button onclick="confirmDeleteRecurringInstance()" class="w-full py-3 px-4 rounded-xl border border-[#00A896]/40 bg-[#0B2545] hover:bg-[#00A896]/20 text-white text-xs font-bold text-left transition flex items-center justify-between shadow-md">
+                    <span>1. Eliminar solo en esta fecha</span>
+                    <span class="text-[#00A896] font-bold">→</span>
                 </button>
-                <button onclick="confirmDeleteRecurringSeries()" class="w-full py-3 px-4 rounded-xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-200 text-xs font-semibold text-left transition flex items-center justify-between">
-                    <span>2. Eliminar EVENTO COMPLETO (Serie o registro base)</span>
-                    <span>→</span>
+                <button onclick="confirmDeleteRecurringSeries()" class="w-full py-3 px-4 rounded-xl border border-red-500/40 bg-red-950/30 hover:bg-red-900/40 text-red-200 text-xs font-bold text-left transition flex items-center justify-between shadow-md">
+                    <span>2. Eliminar todas las repeticiones</span>
+                    <span class="text-red-400 font-bold">→</span>
                 </button>
             </div>
 
             <div class="pt-2 flex justify-end">
-                <button onclick="closeDeleteRecurringModal()" class="px-4 py-2 rounded-xl border border-white/10 bg-white/5 text-xs text-slate-300">Cancelar</button>
+                <button onclick="closeDeleteRecurringModal()" class="px-4 py-2 rounded-xl border border-white/10 bg-white/5 text-xs text-slate-300 font-bold hover:bg-white/10">Cancelar</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL DE AUTENTICACIÓN OBLIGATORIO AL INICIAR (LOGIN / REGISTRO) (RF-01, RF-02) -->
+    <!-- MODAL CONFIRMACIÓN CIERRE DE SESIÓN CORPORATIVO -->
+    <div id="confirmLogoutModal" class="fixed inset-0 z-50 flex items-center justify-center modal-bg p-4 hidden">
+        <div class="w-full max-w-sm rounded-3xl modal-box p-6 shadow-2xl space-y-4 text-center">
+            <div class="h-12 w-12 rounded-2xl bg-[#0B2545] border border-[#00A896]/40 flex items-center justify-center text-2xl mx-auto shadow-md">
+                🚪
+            </div>
+            <div>
+                <h3 class="text-base font-extrabold text-white">¿Cerrar Sesión?</h3>
+                <p class="text-xs text-slate-300 mt-1">¿Estás seguro de que quieres cerrar la sesión?</p>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button onclick="closeConfirmLogoutModal()" class="flex-1 py-2.5 rounded-xl border border-white/10 bg-white/5 text-slate-300 text-xs font-bold hover:bg-white/10 transition">No, Cancelar</button>
+                <button onclick="confirmLogout()" class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition shadow-md">Sí, Cerrar Sesión</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE AUTENTICACIÓN OBLIGATORIO AL INICIAR (LOGIN / REGISTRO) -->
     <div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center modal-bg p-4 hidden">
         <div class="w-full max-w-md rounded-3xl modal-box p-6 shadow-2xl space-y-4">
+            <!-- HEADER LOGO DENTRO DEL LOGIN -->
+            <div class="flex flex-col items-center justify-center text-center pt-2 pb-1">
+                <div class="h-12 w-12 rounded-2xl bg-white flex items-center justify-center p-2 shadow-md border border-[#00A896]/40 mb-2">
+                    <svg viewBox="0 0 100 100" class="w-full h-full">
+                        <circle cx="50" cy="50" r="42" fill="none" stroke="#00A896" stroke-width="8" />
+                        <rect x="34" y="45" width="8" height="25" fill="#00A896" rx="2" />
+                        <rect x="46" y="35" width="8" height="35" fill="#00A896" rx="2" />
+                        <rect x="58" y="48" width="8" height="22" fill="#00A896" rx="2" />
+                        <path d="M 22 65 L 42 45 L 55 56 L 78 26 L 62 26 L 78 26 L 78 42" fill="none" stroke="#0B2545" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </div>
+                <h2 class="text-xl font-extrabold text-white">CONTAFIT CONTADORES</h2>
+                <p class="text-[10px] text-[#00A896] font-bold tracking-widest">MACHALA - ECUADOR</p>
+            </div>
+
             <div class="flex border-b border-white/10 mb-4">
-                <button id="tabLoginBtn" onclick="switchAuthTab('login')" class="flex-1 py-3 text-center text-sm font-semibold text-indigo-400 border-b-2 border-indigo-500">Iniciar Sesión (RF-02)</button>
-                <button id="tabRegisterBtn" onclick="switchAuthTab('register')" class="flex-1 py-3 text-center text-sm font-semibold text-slate-400">Registrarse (RF-01)</button>
+                <button id="tabLoginBtn" onclick="switchAuthTab('login')" class="flex-1 py-3 text-center text-xs font-bold text-[#00A896] border-b-2 border-[#00A896]">Iniciar Sesión</button>
+                <button id="tabRegisterBtn" onclick="switchAuthTab('register')" class="flex-1 py-3 text-center text-xs font-bold text-slate-400">Registrarse</button>
             </div>
 
             <!-- LOGIN FORM -->
-            <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+            <form id="loginForm" onsubmit="handleLogin(event)" autocomplete="off" class="space-y-4">
                 <div>
-                    <label class="block text-xs text-slate-300 mb-1">Correo Electrónico</label>
-                    <input type="email" id="loginEmail" required placeholder="tuemail@ejemplo.com" class="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white focus:outline-none focus:border-indigo-500">
+                    <label class="block text-xs text-slate-300 mb-1">Correo Electrónico *</label>
+                    <input type="email" id="loginEmail" required placeholder="tuemail@ejemplo.com" autocomplete="off" class="w-full rounded-xl border border-white/10 bg-[#0B1320] p-3 text-xs text-white focus:outline-none focus:border-[#00A896]">
                 </div>
                 <div>
-                    <label class="block text-xs text-slate-300 mb-1">Contraseña</label>
-                    <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-white focus:outline-none focus:border-indigo-500">
+                    <label class="block text-xs text-slate-300 mb-1">Contraseña *</label>
+                    <input type="password" id="loginPassword" required placeholder="••••••••" autocomplete="new-password" class="w-full rounded-xl border border-white/10 bg-[#0B1320] p-3 text-xs text-white focus:outline-none focus:border-[#00A896]">
                 </div>
                 <div id="loginError" class="text-xs text-red-400 hidden"></div>
-                <button type="submit" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-semibold text-white text-xs transition">Ingresar</button>
+                <button type="submit" class="w-full py-3 rounded-xl bg-[#00A896] hover:bg-[#028090] font-bold text-slate-950 hover:text-white text-xs transition shadow-lg">Ingresar</button>
             </form>
 
             <!-- REGISTER FORM -->
-            <form id="registerForm" onsubmit="handleRegister(event)" class="space-y-3 hidden">
+            <form id="registerForm" onsubmit="handleRegister(event)" autocomplete="off" class="space-y-3 hidden">
                 <div class="grid grid-cols-2 gap-2">
                     <div>
                         <label class="block text-xs text-slate-300 mb-1">Primer Nombre *</label>
-                        <input type="text" id="regFirstName" required placeholder="Juan" class="w-full rounded-xl border border-white/10 bg-white/5 p-2 text-xs text-white focus:outline-none">
+                        <input type="text" id="regFirstName" required placeholder="Juan" autocomplete="off" class="w-full rounded-xl border border-white/10 bg-[#0B1320] p-2.5 text-xs text-white focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-xs text-slate-300 mb-1">Segundo Nombre</label>
-                        <input type="text" id="regMiddleName" placeholder="Carlos" class="w-full rounded-xl border border-white/10 bg-white/5 p-2 text-xs text-white focus:outline-none">
+                        <input type="text" id="regMiddleName" placeholder="Carlos" autocomplete="off" class="w-full rounded-xl border border-white/10 bg-[#0B1320] p-2.5 text-xs text-white focus:outline-none">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
                         <label class="block text-xs text-slate-300 mb-1">Primer Apellido *</label>
-                        <input type="text" id="regLastName" required placeholder="Pérez" class="w-full rounded-xl border border-white/10 bg-white/5 p-2 text-xs text-white focus:outline-none">
+                        <input type="text" id="regLastName" required placeholder="Pérez" autocomplete="off" class="w-full rounded-xl border border-white/10 bg-[#0B1320] p-2.5 text-xs text-white focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-xs text-slate-300 mb-1">Segundo Apellido</label>
-                        <input type="text" id="regSecondLastName" placeholder="Gómez" class="w-full rounded-xl border border-white/10 bg-white/5 p-2 text-xs text-white focus:outline-none">
+                        <input type="text" id="regSecondLastName" placeholder="Gómez" autocomplete="off" class="w-full rounded-xl border border-white/10 bg-[#0B1320] p-2.5 text-xs text-white focus:outline-none">
                     </div>
                 </div>
                 <div>
                     <label class="block text-xs text-slate-300 mb-1">Correo Electrónico *</label>
-                    <input type="email" id="regEmail" required placeholder="tuemail@ejemplo.com" class="w-full rounded-xl border border-white/10 bg-white/5 p-2 text-xs text-white focus:outline-none">
+                    <input type="email" id="regEmail" required placeholder="tuemail@ejemplo.com" autocomplete="off" class="w-full rounded-xl border border-white/10 bg-[#0B1320] p-2.5 text-xs text-white focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-xs text-slate-300 mb-1">Contraseña Segura *</label>
-                    <input type="password" id="regPassword" required placeholder="••••••••" class="w-full rounded-xl border border-white/10 bg-white/5 p-2 text-xs text-white focus:outline-none">
+                    <input type="password" id="regPassword" required placeholder="••••••••" autocomplete="new-password" class="w-full rounded-xl border border-white/10 bg-[#0B1320] p-2.5 text-xs text-white focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-xs text-slate-300 mb-1">Confirmar Contraseña *</label>
-                    <input type="password" id="regPasswordConfirm" required placeholder="••••••••" class="w-full rounded-xl border border-white/10 bg-white/5 p-2 text-xs text-white focus:outline-none">
+                    <input type="password" id="regPasswordConfirm" required placeholder="••••••••" autocomplete="new-password" class="w-full rounded-xl border border-white/10 bg-[#0B1320] p-2.5 text-xs text-white focus:outline-none">
                 </div>
                 <div id="regError" class="text-xs text-red-400 hidden"></div>
-                <button type="submit" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-semibold text-white text-xs transition">Crear Cuenta</button>
+                <button type="submit" class="w-full py-3 rounded-xl bg-[#00A896] hover:bg-[#028090] font-bold text-slate-950 hover:text-white text-xs transition shadow-lg">Crear Cuenta</button>
             </form>
         </div>
     </div>
 
-    <!-- MODAL CREAR / EDITAR EVENTO (RF-04, RF-05, RF-06, RF-10) -->
+    <!-- MODAL CREAR / EDITAR EVENTO -->
     <div id="createModal" class="fixed inset-0 z-50 flex items-center justify-center modal-bg p-4 hidden">
         <div class="w-full max-w-lg rounded-3xl modal-box p-6 shadow-2xl space-y-4">
             <div class="flex items-center justify-between border-b border-white/10 pb-3">
-                <h3 id="eventFormModalTitle" class="text-base font-bold text-white">Configurar Evento (RF-04, RF-05)</h3>
-                <button onclick="closeCreateModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+                <h3 id="eventFormModalTitle" class="text-base font-extrabold text-white">Nuevo Evento / Tarea</h3>
+                <button onclick="closeCreateModal()" title="Cerrar modal" class="text-slate-400 hover:text-white text-lg">✕</button>
             </div>
 
             <form onsubmit="handleSaveEvent(event)" class="space-y-3">
@@ -260,42 +330,56 @@
 
                 <div>
                     <label class="block text-xs text-slate-300 mb-1">Título *</label>
-                    <input type="text" id="evtTitle" required placeholder="ej. Pagar servicios o Reunión" class="w-full rounded-xl border border-white/10 bg-white/5 p-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+                    <input type="text" id="evtTitle" required placeholder="ej. Pagar impuestos SRI o Reunión con Cliente" class="w-full rounded-xl border border-white/10 bg-[#0B1320] p-2.5 text-xs text-white focus:outline-none focus:border-[#00A896]">
                 </div>
                 <div>
                     <label class="block text-xs text-slate-300 mb-1">Descripción / Nota</label>
-                    <textarea id="evtDescription" rows="2" placeholder="Detalles adicionales..." class="w-full rounded-xl border border-white/10 bg-white/5 p-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"></textarea>
+                    <textarea id="evtDescription" rows="2" placeholder="Detalles de la tarea o nota..." class="w-full rounded-xl border border-white/10 bg-[#0B1320] p-2.5 text-xs text-white focus:outline-none focus:border-[#00A896]"></textarea>
                 </div>
+
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs text-slate-300 mb-1">Tipo de Evento *</label>
-                        <select id="evtType" class="w-full rounded-xl border border-white/10 bg-[#1e293b] p-2.5 text-xs text-white focus:outline-none">
+                        <select id="evtType" class="w-full rounded-xl border border-white/10 bg-[#0B2545] p-2.5 text-xs text-white focus:outline-none focus:border-[#00A896]">
                             <option value="tarea">📝 Tarea</option>
                             <option value="recordatorio">⏰ Recordatorio</option>
                             <option value="fecha_importante">📌 Fecha Importante</option>
                         </select>
                     </div>
+
+                    <!-- SELECTOR DE COLORES VISIBLES PARA EVENTOS -->
                     <div>
-                        <label class="block text-xs text-slate-300 mb-1">Color Identificativo</label>
-                        <input type="color" id="evtColor" value="#3B82F6" class="w-full h-9 rounded-xl border border-white/10 bg-white/5 p-1 cursor-pointer">
+                        <label class="block text-xs text-slate-300 mb-1">Color Identificativo del Evento</label>
+                        <div class="flex items-center gap-2">
+                            <input type="color" id="evtColor" value="#00A896" title="Selector libre de color" class="w-10 h-9 rounded-xl border border-white/10 bg-white/5 p-1 cursor-pointer">
+                            <div class="flex items-center gap-1.5 flex-1 overflow-x-auto py-1" title="Paleta de colores llamativos y visibles para eventos">
+                                <span onclick="setCorporateColor('#00A896')" class="h-6 w-6 rounded-lg bg-[#00A896] border border-white/30 cursor-pointer hover:scale-110 transition shadow-sm" title="Verde Turquesa Contafit"></span>
+                                <span onclick="setCorporateColor('#06B6D4')" class="h-6 w-6 rounded-lg bg-[#06B6D4] border border-white/30 cursor-pointer hover:scale-110 transition shadow-sm" title="Cian Vibrante"></span>
+                                <span onclick="setCorporateColor('#10B981')" class="h-6 w-6 rounded-lg bg-[#10B981] border border-white/30 cursor-pointer hover:scale-110 transition shadow-sm" title="Verde Esmeralda"></span>
+                                <span onclick="setCorporateColor('#8B5CF6')" class="h-6 w-6 rounded-lg bg-[#8B5CF6] border border-white/30 cursor-pointer hover:scale-110 transition shadow-sm" title="Púrpura Místico"></span>
+                                <span onclick="setCorporateColor('#F59E0B')" class="h-6 w-6 rounded-lg bg-[#F59E0B] border border-white/30 cursor-pointer hover:scale-110 transition shadow-sm" title="Ámbar Warm"></span>
+                                <span onclick="setCorporateColor('#F43F5E')" class="h-6 w-6 rounded-lg bg-[#F43F5E] border border-white/30 cursor-pointer hover:scale-110 transition shadow-sm" title="Coral Prioridad"></span>
+                                <span onclick="setCorporateColor('#EC4899')" class="h-6 w-6 rounded-lg bg-[#EC4899] border border-white/30 cursor-pointer hover:scale-110 transition shadow-sm" title="Rosa Neón"></span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs text-slate-300 mb-1">Hora Inicio *</label>
-                        <input type="datetime-local" id="evtStartAt" required class="w-full rounded-xl border border-white/10 bg-white/5 p-2 text-xs text-white focus:outline-none">
+                        <input type="datetime-local" id="evtStartAt" required class="w-full rounded-xl border border-white/10 bg-[#0B1320] p-2 text-xs text-white focus:outline-none focus:border-[#00A896]">
                     </div>
                     <div>
                         <label class="block text-xs text-slate-300 mb-1">Hora Fin (Opcional)</label>
-                        <input type="datetime-local" id="evtEndAt" class="w-full rounded-xl border border-white/10 bg-white/5 p-2 text-xs text-white focus:outline-none">
+                        <input type="datetime-local" id="evtEndAt" class="w-full rounded-xl border border-white/10 bg-[#0B1320] p-2 text-xs text-white focus:outline-none focus:border-[#00A896]">
                     </div>
                 </div>
 
-                <!-- ANTICIPACIÓN DE NOTIFICACIÓN / ALERTA ASÍNCRONA (RF-10) -->
+                <!-- ANTICIPACIÓN DE NOTIFICACIÓN / ALERTA ASÍNCRONA -->
                 <div>
-                    <label class="block text-xs text-slate-300 mb-1">⏰ Anticipación de Alerta / Notificación (RF-10)</label>
-                    <select id="evtReminderMinutes" class="w-full rounded-xl border border-white/10 bg-[#1e293b] p-2.5 text-xs text-white focus:outline-none">
+                    <label class="block text-xs text-slate-300 mb-1">⏰ Anticipación de Notificación</label>
+                    <select id="evtReminderMinutes" title="Elige con cuánta anticipación recibirás el correo de alerta" class="w-full rounded-xl border border-white/10 bg-[#0B2545] p-2.5 text-xs text-white focus:outline-none focus:border-[#00A896]">
                         <option value="0">En el momento del evento</option>
                         <option value="15" selected>15 minutos antes</option>
                         <option value="30">30 minutos antes</option>
@@ -308,16 +392,16 @@
                     </select>
                 </div>
 
-                <!-- EVENTOS RECURRENTES (RF-06) -->
+                <!-- EVENTOS RECURRENTES -->
                 <div class="border-t border-white/10 pt-3">
-                    <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
-                        <input type="checkbox" id="evtIsRecurring" onchange="toggleRecurrenceOptions()" class="rounded border-white/10 text-indigo-600 focus:ring-0">
-                        Eventos Recurrentes (RF-06)
+                    <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer" title="Configurar repetición periódica de este evento">
+                        <input type="checkbox" id="evtIsRecurring" onchange="toggleRecurrenceOptions()" class="rounded border-white/10 text-[#00A896] focus:ring-[#00A896]">
+                        Eventos Recurrentes
                     </label>
                     
                     <div id="recurrenceOptions" class="mt-2 hidden">
                         <label class="block text-xs text-slate-300 mb-1">Regla de Repetición</label>
-                        <select id="evtRecurrenceFreq" class="w-full rounded-xl border border-white/10 bg-[#1e293b] p-2 text-xs text-white">
+                        <select id="evtRecurrenceFreq" class="w-full rounded-xl border border-white/10 bg-[#0B2545] p-2 text-xs text-white">
                             <option value="diaria">Diaria (Todos los días)</option>
                             <option value="semanal">Semanal (Mismo día de la semana)</option>
                             <option value="mensual">Mensual (Mismo día del mes)</option>
@@ -329,51 +413,51 @@
                 <div id="createError" class="text-xs text-red-400 hidden"></div>
 
                 <div class="flex gap-3 pt-2">
-                    <button type="button" onclick="closeCreateModal()" class="flex-1 py-2.5 rounded-xl border border-white/10 bg-white/5 text-slate-300 text-xs">Cancelar</button>
-                    <button type="submit" class="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-semibold text-white text-xs transition">Guardar Evento</button>
+                    <button type="button" onclick="closeCreateModal()" class="flex-1 py-2.5 rounded-xl border border-white/10 bg-white/5 text-slate-300 text-xs hover:bg-white/10">Cancelar</button>
+                    <button type="submit" class="flex-1 py-2.5 rounded-xl bg-[#00A896] hover:bg-[#028090] font-bold text-slate-950 hover:text-white text-xs transition shadow-md">Guardar Evento</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- MODAL PAPELERA DE RECICLAJE (RF-11) -->
+    <!-- MODAL PAPELERA DE RECICLAJE -->
     <div id="trashModal" class="fixed inset-0 z-50 flex items-center justify-center modal-bg p-4 hidden">
         <div class="w-full max-w-xl rounded-3xl modal-box p-6 shadow-2xl space-y-4">
             <div class="flex items-center justify-between border-b border-white/10 pb-3">
-                <h3 class="text-base font-bold text-amber-400">🗑️ Papelera de Reciclaje (RF-11)</h3>
+                <h3 class="text-base font-extrabold text-white">🗑️ Papelera de Reciclaje</h3>
                 <button onclick="closeTrashModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
             </div>
 
-            <p class="text-xs text-slate-400">Los eventos eliminados permanecen en la papelera durante 30 días antes de ser purgados automáticamente.</p>
+            <p class="text-xs text-slate-300">Eventos eliminados recientemente.</p>
 
             <div id="trashList" class="space-y-2.5 max-h-[350px] overflow-y-auto pr-1">
                 <div class="p-4 text-center text-slate-400 text-xs">Cargando papelera...</div>
             </div>
 
             <div class="flex justify-end pt-2 border-t border-white/10">
-                <button type="button" onclick="closeTrashModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">Cerrar</button>
+                <button type="button" onclick="closeTrashModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold">Cerrar</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL BORRADO DE CUENTA (RF-03) -->
+    <!-- MODAL BORRADO DE CUENTA -->
     <div id="deleteAccountModal" class="fixed inset-0 z-50 flex items-center justify-center modal-bg p-4 hidden">
         <div class="w-full max-w-md rounded-3xl modal-box p-6 shadow-2xl space-y-4">
             <div class="flex items-center justify-between border-b border-white/10 pb-3">
-                <h3 class="text-base font-bold text-red-400">Solicitar Borrado de Cuenta (RF-03)</h3>
+                <h3 class="text-base font-bold text-red-400">Solicitar Borrado de Cuenta</h3>
                 <button onclick="closeDeleteAccountModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
             </div>
 
-            <p class="text-xs text-slate-300">Por seguridad, valida tu contraseña y solicita un código de 6 dígitos enviado a tu correo.</p>
+            <p class="text-xs text-slate-300">Ingresa tu contraseña y el código enviado a tu correo.</p>
 
-            <form onsubmit="handleDeleteAccount(event)" class="space-y-3">
+            <form onsubmit="handleDeleteAccount(event)" autocomplete="off" class="space-y-3">
                 <div>
                     <label class="block text-xs text-slate-300 mb-1">1. Contraseña actual *</label>
-                    <input type="password" id="deletePasswordInput" required placeholder="••••••••" class="w-full rounded-xl border border-red-500/30 bg-black/50 p-2.5 text-xs text-white focus:outline-none">
+                    <input type="password" id="deletePasswordInput" required placeholder="••••••••" autocomplete="new-password" class="w-full rounded-xl border border-red-500/30 bg-black/50 p-2.5 text-xs text-white focus:outline-none">
                 </div>
 
                 <div>
-                    <button type="button" id="btnSendDelCode" onclick="handleSendDeletionCode()" class="w-full py-2 rounded-xl border border-indigo-500/40 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 text-xs font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    <button type="button" id="btnSendDelCode" onclick="handleSendDeletionCode()" class="w-full py-2 rounded-xl border border-[#00A896]/40 bg-[#00A896]/20 hover:bg-[#00A896]/30 text-[#00A896] text-xs font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed">
                         📧 Solicitar Código de Verificación al Correo
                     </button>
                     <p id="deleteCodeStatus" class="text-[11px] text-emerald-400 mt-1 hidden"></p>
@@ -381,7 +465,7 @@
 
                 <div>
                     <label class="block text-xs text-slate-300 mb-1">2. Código de Verificación (6 dígitos)</label>
-                    <input type="text" id="deleteCodeInput" placeholder="Ej. 123456" class="w-full rounded-xl border border-red-500/30 bg-black/50 p-2.5 text-xs text-white focus:outline-none font-mono">
+                    <input type="text" id="deleteCodeInput" placeholder="Ej. 123456" autocomplete="off" class="w-full rounded-xl border border-red-500/30 bg-black/50 p-2.5 text-xs text-white focus:outline-none font-mono">
                 </div>
 
                 <div id="deleteAccountError" class="text-xs text-red-400 hidden"></div>
@@ -393,7 +477,7 @@
         </div>
     </div>
 
-    <!-- JAVASCRIPT: MANEJO DE SESIÓN REAL Y NAVEGACIÓN DE CALENDARIO -->
+    <!-- JAVASCRIPT: LOGICA Y FORMATO DE FECHAS ECUADOR (dd/mm/yyyy) -->
     <script>
         let token = localStorage.getItem('auth_token') || null;
         let user = JSON.parse(localStorage.getItem('user_data') || 'null');
@@ -403,9 +487,96 @@
         let selectedDayDateStr = null;
         let pendingDeleteEventId = null;
 
+        // LIMPIEZA DE SEGURIDAD EN CAMPOS DE AUTENTICACIÓN Y FORMULARIOS
+        function clearAuthForms() {
+            const loginForm = document.getElementById('loginForm');
+            if (loginForm) loginForm.reset();
+
+            const registerForm = document.getElementById('registerForm');
+            if (registerForm) registerForm.reset();
+
+            const loginErr = document.getElementById('loginError');
+            if (loginErr) { loginErr.innerText = ''; loginErr.classList.add('hidden'); }
+
+            const regErr = document.getElementById('regError');
+            if (regErr) { regErr.innerText = ''; regErr.classList.add('hidden'); }
+
+            const delPass = document.getElementById('deletePasswordInput');
+            if (delPass) delPass.value = '';
+            const delCode = document.getElementById('deleteCodeInput');
+            if (delCode) delCode.value = '';
+            const delErr = document.getElementById('deleteAccountError');
+            if (delErr) { delErr.innerText = ''; delErr.classList.add('hidden'); }
+        }
+
+        // SISTEMA DE NOTIFICACIONES TOAST CORPORATIVAS CONTAFIT (UI/UX)
+        function showToast(message, type = 'success', duration = 4000) {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            toast.className = `pointer-events-auto flex items-center gap-3 p-3.5 rounded-2xl shadow-2xl border text-xs font-bold transform transition-all duration-300 translate-x-10 opacity-0`;
+            
+            if (type === 'success') {
+                toast.className += ` bg-[#0B2545] border-[#00A896] text-white shadow-[#00A896]/20`;
+                toast.innerHTML = `<span class="text-base">✅</span> <div class="flex-1">${message}</div>`;
+            } else if (type === 'error') {
+                toast.className += ` bg-[#1E1B2E] border-red-500/50 text-red-200 shadow-red-500/20`;
+                toast.innerHTML = `<span class="text-base">❌</span> <div class="flex-1">${message}</div>`;
+            } else if (type === 'warning') {
+                toast.className += ` bg-[#2E201B] border-amber-500/50 text-amber-200 shadow-amber-500/20`;
+                toast.innerHTML = `<span class="text-base">⚠️</span> <div class="flex-1">${message}</div>`;
+            } else {
+                toast.className += ` bg-[#0B2545] border-sky-500/50 text-sky-200 shadow-sky-500/20`;
+                toast.innerHTML = `<span class="text-base">ℹ️</span> <div class="flex-1">${message}</div>`;
+            }
+
+            container.appendChild(toast);
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-x-10', 'opacity-0');
+                toast.classList.add('translate-x-0', 'opacity-100');
+            });
+
+            setTimeout(() => {
+                toast.classList.remove('translate-x-0', 'opacity-100');
+                toast.classList.add('translate-x-10', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             checkAuth();
         });
+
+        // CONTROL DEL DROPDOWN DE USUARIO
+        function toggleUserDropdown(e) {
+            if (e) e.stopPropagation();
+            const dropdown = document.getElementById('userDropdown');
+            if (dropdown) dropdown.classList.toggle('hidden');
+        }
+
+        function closeUserDropdown() {
+            const dropdown = document.getElementById('userDropdown');
+            if (dropdown) dropdown.classList.add('hidden');
+        }
+
+        document.addEventListener('click', () => closeUserDropdown());
+
+        function setCorporateColor(hexColor) {
+            document.getElementById('evtColor').value = hexColor;
+        }
+
+        // FORMATO DE FECHA ECUATORIANO (dd/mm/yyyy)
+        function formatDateEC(isoOrYmdStr) {
+            if (!isoOrYmdStr) return '';
+            const cleanStr = isoOrYmdStr.slice(0, 10);
+            const parts = cleanStr.split('-');
+            if (parts.length === 3) {
+                return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+            return isoOrYmdStr;
+        }
 
         function handleApiResponse(res) {
             if (res.status === 401) {
@@ -421,6 +592,7 @@
             user = null;
             currentEvents = [];
             currentHolidays = [];
+            clearAuthForms();
             document.getElementById('todayTaskList').innerHTML = `<div class="p-4 text-center text-slate-400 text-xs">Sesión expirada o usuario no registrado. Por favor inicia sesión.</div>`;
             document.getElementById('calendarGrid').innerHTML = '';
             document.getElementById('authModal').classList.remove('hidden');
@@ -460,27 +632,62 @@
             openDayViewModal(todayStr);
         }
 
+        function openConfirmLogoutModal() {
+            document.getElementById('confirmLogoutModal').classList.remove('hidden');
+        }
+
+        function closeConfirmLogoutModal() {
+            document.getElementById('confirmLogoutModal').classList.add('hidden');
+        }
+
+        function confirmLogout() {
+            closeConfirmLogoutModal();
+            handleLogout();
+        }
+
         function checkAuth() {
             const header = document.getElementById('authHeader');
-            const dayBadge = document.getElementById('todayDayBadge');
-            if (dayBadge) dayBadge.innerText = new Date().getDate();
 
             if (!token || !user) {
                 document.getElementById('authModal').classList.remove('hidden');
-                header.innerHTML = `<button onclick="openAuthModal()" class="px-3 py-1.5 rounded-xl bg-indigo-600 text-xs font-semibold text-white hover:bg-indigo-500">Ingresar / Registro</button>`;
+                header.innerHTML = `<button onclick="openAuthModal()" class="px-4 py-2 rounded-xl bg-[#00A896] hover:bg-[#028090] text-xs font-bold text-slate-950 hover:text-white transition shadow-md">Ingresar / Registro</button>`;
             } else {
                 document.getElementById('authModal').classList.add('hidden');
                 header.innerHTML = `
-                    <span class="text-xs font-semibold text-slate-200">👋 <strong>${user.name}</strong></span>
-                    <button onclick="openTrashModal()" class="px-2.5 py-1 rounded-xl border border-amber-500/30 bg-amber-500/10 text-[11px] text-amber-300 hover:bg-amber-500/20 transition">🗑️ Papelera (RF-11)</button>
-                    <button onclick="openDeleteAccountModal()" class="px-2.5 py-1 rounded-xl border border-red-500/30 bg-red-500/10 text-[11px] text-red-300 hover:bg-red-500/20 transition">Borrar Cuenta (RF-03)</button>
-                    <button onclick="handleLogout()" class="px-2.5 py-1 rounded-xl border border-white/10 bg-white/5 text-[11px] text-slate-300 hover:bg-white/10 transition">Salir</button>
+                    <!-- MENÚ DESPLEGABLE DE USUARIO (DROPDOWN CORPORATIVO) -->
+                    <div class="relative inline-block text-left">
+                        <button onclick="toggleUserDropdown(event)" title="Opciones de perfil de usuario" class="px-3.5 py-2 rounded-xl bg-[#00A896] hover:bg-[#028090] text-slate-950 font-extrabold text-xs shadow-lg transition-all flex items-center gap-2 cursor-pointer border border-[#00A896]/40">
+                            <span class="h-6 w-6 rounded-lg bg-[#0B2545] text-white flex items-center justify-center text-[11px] font-black shadow-inner">${user.name.charAt(0).toUpperCase()}</span>
+                            <span>${user.name}</span>
+                            <span class="text-[10px] text-slate-950">▼</span>
+                        </button>
+
+                        <div id="userDropdown" class="hidden absolute right-0 mt-2 w-60 rounded-2xl bg-[#1E293B] border border-[#00A896]/40 shadow-2xl z-50 p-2 space-y-1">
+                            <div class="px-3 py-2 border-b border-white/10 mb-1">
+                                <p class="text-xs font-bold text-white">${user.name}</p>
+                                <p class="text-[10px] text-slate-400 truncate">${user.email}</p>
+                            </div>
+                            
+                            <button onclick="closeUserDropdown(); openTrashModal();" class="w-full text-left px-3 py-2 rounded-xl text-xs text-amber-300 hover:bg-amber-500/20 transition font-bold flex items-center gap-2">
+                                <span>🗑️</span> <span>Papelera de Reciclaje</span>
+                            </button>
+
+                            <button onclick="closeUserDropdown(); openDeleteAccountModal();" class="w-full text-left px-3 py-2 rounded-xl text-xs text-red-300 hover:bg-red-950/40 hover:text-red-200 transition font-bold flex items-center gap-2">
+                                <span>⚠️</span> <span>Borrar Cuenta</span>
+                            </button>
+
+                            <button onclick="closeUserDropdown(); openConfirmLogoutModal();" class="w-full text-left px-3 py-2 rounded-xl text-xs text-slate-200 hover:bg-white/10 transition font-bold flex items-center gap-2 border-t border-white/10 pt-1.5">
+                                <span>🚪</span> <span>Cerrar Sesión</span>
+                            </button>
+                        </div>
+                    </div>
                 `;
                 loadDashboardData();
             }
         }
 
         function switchAuthTab(tab) {
+            clearAuthForms();
             const loginForm = document.getElementById('loginForm');
             const registerForm = document.getElementById('registerForm');
             const tabLoginBtn = document.getElementById('tabLoginBtn');
@@ -489,17 +696,20 @@
             if (tab === 'login') {
                 loginForm.classList.remove('hidden');
                 registerForm.classList.add('hidden');
-                tabLoginBtn.className = 'flex-1 py-3 text-center text-sm font-semibold text-indigo-400 border-b-2 border-indigo-500';
-                tabRegisterBtn.className = 'flex-1 py-3 text-center text-sm font-semibold text-slate-400';
+                tabLoginBtn.className = 'flex-1 py-3 text-center text-xs font-bold text-[#00A896] border-b-2 border-[#00A896]';
+                tabRegisterBtn.className = 'flex-1 py-3 text-center text-xs font-bold text-slate-400';
             } else {
                 loginForm.classList.add('hidden');
                 registerForm.classList.remove('hidden');
-                tabRegisterBtn.className = 'flex-1 py-3 text-center text-sm font-semibold text-indigo-400 border-b-2 border-indigo-500';
-                tabLoginBtn.className = 'flex-1 py-3 text-center text-sm font-semibold text-slate-400';
+                tabRegisterBtn.className = 'flex-1 py-3 text-center text-xs font-bold text-[#00A896] border-b-2 border-[#00A896]';
+                tabLoginBtn.className = 'flex-1 py-3 text-center text-xs font-bold text-slate-400';
             }
         }
 
-        function openAuthModal() { document.getElementById('authModal').classList.remove('hidden'); }
+        function openAuthModal() { 
+            clearAuthForms();
+            document.getElementById('authModal').classList.remove('hidden'); 
+        }
 
         async function handleLogin(e) {
             e.preventDefault();
@@ -523,7 +733,9 @@
                     user = data.data.user;
                     localStorage.setItem('auth_token', token);
                     localStorage.setItem('user_data', JSON.stringify(user));
+                    clearAuthForms();
                     checkAuth();
+                    showToast(`¡Bienvenido a ContaFit, ${user.name}!`, 'success');
                 } else {
                     errDiv.innerText = data.message || 'Credenciales inválidas.';
                     errDiv.classList.remove('hidden');
@@ -561,7 +773,9 @@
                     user = data.data.user;
                     localStorage.setItem('auth_token', token);
                     localStorage.setItem('user_data', JSON.stringify(user));
+                    clearAuthForms();
                     checkAuth();
+                    showToast(`¡Cuenta creada exitosamente! Bienvenido, ${user.name}`, 'success');
                 } else {
                     const msg = data.data?.errors ? Object.values(data.data.errors).flat().join('<br>') : (data.message || 'Error al registrar.');
                     errDiv.innerHTML = msg;
@@ -577,18 +791,20 @@
             localStorage.clear();
             token = null; user = null;
             currentEvents = []; currentHolidays = [];
+            clearAuthForms();
             document.getElementById('todayTaskList').innerHTML = `<div class="p-4 text-center text-slate-400 text-xs">Por favor inicia sesión.</div>`;
             document.getElementById('calendarGrid').innerHTML = '';
+            showToast('Sesión cerrada correctamente.', 'info');
             checkAuth();
         }
 
         async function loadDashboardData() {
             await fetchTodayTasks();
-            await fetchHolidays(currentDate.getFullYear());
+            await fetchHolidays();
             await applyFilters();
         }
 
-        // RF-08: DASHBOARD CHECKLIST CON OPCIÓN DE VER Y DESMARCAR COMPLETADAS
+        // DASHBOARD CHECKLIST
         async function fetchTodayTasks() {
             const list = document.getElementById('todayTaskList');
             const badge = document.getElementById('taskCountBadge');
@@ -616,7 +832,7 @@
                     badge.innerText = `${pendingCount} pendientes`;
 
                     if (tasks.length === 0) {
-                        list.innerHTML = `<div class="p-4 text-center text-slate-400 text-xs">🎉 No tienes tareas para mostrar.</div>`;
+                        list.innerHTML = `<div class="p-4 text-center text-slate-400 text-xs">🎉 No tienes tareas pendientes para hoy.</div>`;
                         return;
                     }
 
@@ -625,23 +841,23 @@
                         const isCompleted = t.status === 'completada';
 
                         return `
-                            <div class="rounded-xl border border-white/10 bg-[#1e293b] p-3 space-y-2 ${isCompleted ? 'opacity-60 line-through' : ''}">
+                            <div class="rounded-xl border border-white/10 bg-[#0B2545]/60 p-3 space-y-2 ${isCompleted ? 'opacity-60 line-through' : ''}">
                                 <div class="flex items-start justify-between gap-2">
                                     <div class="flex items-center gap-2">
-                                        <input type="checkbox" ${isCompleted ? 'checked' : ''} onchange="changeTaskStatus(${t.id}, this.checked ? 'completada' : 'pendiente')" class="h-4 w-4 rounded border-white/20 text-indigo-600 focus:ring-0 cursor-pointer">
+                                        <input type="checkbox" ${isCompleted ? 'checked' : ''} onchange="changeTaskStatus(${t.id}, this.checked ? 'completada' : 'pendiente')" class="h-4 w-4 rounded border-white/20 text-[#00A896] focus:ring-0 cursor-pointer" title="Marcar como completada">
                                         <div>
-                                            <p class="text-[10px] font-bold text-slate-400">${timeStr} - ${t.type.toUpperCase()}</p>
-                                            <h3 class="text-xs font-semibold text-white">${t.title}</h3>
+                                            <p class="text-[10px] font-bold text-[#00A896]">${timeStr} - ${t.type.toUpperCase()}</p>
+                                            <h3 class="text-xs font-bold text-white">${t.title}</h3>
                                         </div>
                                     </div>
-                                    <span class="h-2.5 w-2.5 rounded-full shrink-0" style="background-color: ${t.color}"></span>
+                                    <span class="h-3 w-3 rounded-full shrink-0 border border-white/20" style="background-color: ${t.color}"></span>
                                 </div>
                                 <div class="flex items-center justify-between text-[11px] text-slate-300 pt-1.5 border-t border-white/5">
-                                    <span class="text-[10px] font-medium text-indigo-300">Estado: <strong>${t.status}</strong></span>
+                                    <span class="text-[10px] font-medium text-slate-300">Estado: <strong class="text-white">${t.status}</strong></span>
                                     <div class="flex gap-2">
                                         ${isCompleted ? 
-                                            `<button onclick="changeTaskStatus(${t.id}, 'pendiente')" class="text-amber-400 hover:text-amber-300 text-[10px] font-semibold cursor-pointer">↩️ Desmarcar</button>` : 
-                                            `<button onclick="changeTaskStatus(${t.id}, 'en_progreso')" class="text-indigo-400 hover:text-indigo-300 text-[10px] font-semibold cursor-pointer">🚀 En Progreso</button>`
+                                            `<button onclick="changeTaskStatus(${t.id}, 'pendiente')" class="text-amber-400 hover:text-amber-300 text-[10px] font-bold cursor-pointer">↩️ Desmarcar</button>` : 
+                                            `<button onclick="changeTaskStatus(${t.id}, 'en_progreso')" class="text-[#00A896] hover:text-teal-300 text-[10px] font-bold cursor-pointer">🚀 En Progreso</button>`
                                         }
                                     </div>
                                 </div>
@@ -652,34 +868,62 @@
             } catch (err) { console.error(err); }
         }
 
-        // RF-09: FERIADOS ECUADOR
-        async function fetchHolidays(year = null) {
+        // PRÓXIMOS FERIADOS ECUADOR (PRÓXIMOS 6 MESES)
+        async function fetchHolidays() {
             const widget = document.getElementById('holidaysWidget');
             if (!token) return;
 
-            const reqYear = year || currentDate.getFullYear();
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const todayStr = getLocalYYYYMMDD(now);
+
+            const sixMonthsLater = new Date();
+            sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6);
+            const sixMonthsStr = getLocalYYYYMMDD(sixMonthsLater);
 
             try {
-                let res = await fetch(`/api/holidays?year=${reqYear}`, {
+                let resCurr = await fetch(`/api/holidays?year=${currentYear}`, {
                     headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
                 });
-                res = handleApiResponse(res);
-                if (!res) return;
+                resCurr = handleApiResponse(resCurr);
+                if (!resCurr) return;
 
-                const data = await res.json();
-                if (data.success) {
-                    currentHolidays = data.data.holidays || [];
-                    widget.innerHTML = currentHolidays.slice(0, 5).map(h => `
-                        <div class="flex items-center justify-between text-slate-300">
-                            <span>🇪🇨 ${h.name}</span>
-                            <span class="text-slate-400 font-mono text-[10px]">${h.date.slice(0, 10)}</span>
+                const dataCurr = await resCurr.json();
+                let allHolidays = dataCurr.data?.holidays || [];
+
+                // Si el rango de 6 meses pasa al siguiente año, cargar también el próximo año
+                if (sixMonthsLater.getFullYear() > currentYear) {
+                    let resNext = await fetch(`/api/holidays?year=${currentYear + 1}`, {
+                        headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' }
+                    });
+                    resNext = handleApiResponse(resNext);
+                    if (resNext) {
+                        const dataNext = await resNext.json();
+                        if (dataNext.success && dataNext.data?.holidays) {
+                            allHolidays = allHolidays.concat(dataNext.data.holidays);
+                        }
+                    }
+                }
+
+                currentHolidays = allHolidays;
+
+                // Filtrar solo feriados futuros en los próximos 6 meses (hoy <= fecha <= hoy+6meses)
+                const upcoming = allHolidays.filter(h => h.date >= todayStr && h.date <= sixMonthsStr);
+
+                if (upcoming.length === 0) {
+                    widget.innerHTML = `<div class="text-slate-400 text-[11px]">No hay feriados en los próximos 6 meses.</div>`;
+                } else {
+                    widget.innerHTML = upcoming.slice(0, 5).map(h => `
+                        <div class="flex items-center justify-between text-slate-200">
+                            <span class="font-medium">🇪🇨 ${h.name}</span>
+                            <span class="text-[#00A896] font-mono text-[11px] font-bold">${formatDateEC(h.date)}</span>
                         </div>
                     `).join('');
                 }
             } catch (err) { console.error(err); }
         }
 
-        // RF-07: FILTROS Y BÚSQUEDA EN TIEMPO REAL
+        // FILTROS Y BÚSQUEDA EN TIEMPO REAL
         async function applyFilters() {
             if (!token) return;
 
@@ -708,13 +952,8 @@
         }
 
         async function navigateMonth(direction) {
-            const oldYear = currentDate.getFullYear();
             currentDate.setMonth(currentDate.getMonth() + direction);
-            const newYear = currentDate.getFullYear();
-            
-            if (oldYear !== newYear) {
-                await fetchHolidays(newYear);
-            }
+            await fetchHolidays();
             renderCalendar();
         }
 
@@ -795,21 +1034,21 @@
                 const dayHolidays = currentHolidays.filter(h => h.date.startsWith(dateKey));
 
                 cellsHTML += `
-                    <div onclick="openDayViewModal('${dateKey}')" class="relative flex min-h-[90px] flex-col overflow-hidden rounded-xl border border-white/10 p-2 text-white cursor-pointer hover:border-indigo-500/80 transition ${isToday ? 'ring-2 ring-indigo-500 bg-indigo-950/40' : 'bg-white/5'}">
+                    <div onclick="openDayViewModal('${dateKey}')" class="relative flex min-h-[95px] flex-col overflow-hidden rounded-2xl border border-white/10 p-2.5 text-white cursor-pointer hover:border-[#00A896] transition-all ${isToday ? 'ring-2 ring-[#00A896] bg-[#0B2545]/80 shadow-md shadow-[#00A896]/20' : 'bg-[#1E293B]/60 hover:bg-[#1E293B]'}" title="Ver eventos para la fecha ${formatDateEC(dateKey)}">
                         <div class="flex items-start justify-between">
-                            <span class="text-xs font-semibold text-slate-300">${day}</span>
-                            ${isToday ? `<span class="rounded bg-indigo-500 px-1 py-0.2 text-[8px] font-bold text-slate-950">HOY</span>` : ''}
+                            <span class="text-xs font-bold ${isToday ? 'text-[#00A896]' : 'text-slate-200'}">${day}</span>
+                            ${isToday ? `<span class="rounded bg-[#00A896] px-1.5 py-0.2 text-[8px] font-extrabold text-slate-950">HOY</span>` : ''}
                         </div>
 
-                        <div class="mt-1 space-y-1 overflow-y-auto max-h-[60px]">
+                        <div class="mt-1 space-y-1 overflow-y-auto max-h-[65px]">
                             ${dayHolidays.map(h => `
-                                <div class="rounded bg-emerald-600/90 px-1 py-0.5 text-[9px] font-semibold text-white truncate" title="${h.name}">
+                                <div class="rounded-lg bg-emerald-600/90 px-1.5 py-0.5 text-[9px] font-bold text-white truncate" title="${h.name}">
                                     🇪🇨 ${h.name}
                                 </div>
                             `).join('')}
 
                             ${dayEvents.map(e => `
-                                <div class="rounded px-1 py-0.5 text-[9px] font-semibold text-white truncate flex items-center justify-between" style="background-color: ${e.color}" title="${e.title}">
+                                <div class="rounded-lg px-1.5 py-0.5 text-[9px] font-bold text-white truncate flex items-center justify-between shadow-sm" style="background-color: ${e.color}" title="${e.title}">
                                     <span>${e.is_recurring ? '🔄 ' : ''}${e.title}</span>
                                 </div>
                             `).join('')}
@@ -821,10 +1060,11 @@
             grid.innerHTML = cellsHTML;
         }
 
-        // MODAL VER EVENTOS DEL DÍA (RF-05, RF-06, RF-09)
+        // MODAL VER EVENTOS DEL DÍA
         function openDayViewModal(dateStr) {
             selectedDayDateStr = dateStr;
-            document.getElementById('dayViewTitle').innerText = `📅 Eventos del Día (${dateStr})`;
+            const dateEC = formatDateEC(dateStr);
+            document.getElementById('dayViewTitle').innerText = `📅 Eventos del Día (${dateEC})`;
             
             const container = document.getElementById('dayViewContent');
             const dayEvents = currentEvents.filter(e => eventMatchesDate(e, dateStr));
@@ -834,37 +1074,37 @@
 
             if (dayHolidays.length > 0) {
                 html += `<div class="mb-3 space-y-1">
-                    <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Feriados de Ecuador (RF-09)</h4>
+                    <h4 class="text-xs font-bold text-[#00A896] uppercase tracking-wider">Feriados de Ecuador</h4>
                     ${dayHolidays.map(h => `
-                        <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-xs text-emerald-200">
-                            🇪🇨 <strong>${h.name}</strong> (Feriado Oficial)
+                        <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-xs text-emerald-200 font-medium">
+                            🇪🇨 <strong>${h.name}</strong>
                         </div>
                     `).join('')}
                 </div>`;
             }
 
             if (dayEvents.length === 0) {
-                html += `<div class="p-6 text-center text-slate-400 text-xs">No hay eventos ni tareas registradas para esta fecha.</div>`;
+                html += `<div class="p-6 text-center text-slate-400 text-xs">No hay eventos registrados para esta fecha (${dateEC}).</div>`;
             } else {
                 html += `<div class="space-y-2">
-                    <h4 class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Eventos Registrados</h4>
+                    <h4 class="text-xs font-bold text-[#00A896] uppercase tracking-wider">Eventos Registrados</h4>
                     ${dayEvents.map(e => `
-                        <div class="rounded-xl border border-white/10 bg-[#1e293b] p-3 space-y-2">
+                        <div class="rounded-xl border border-white/10 bg-[#0B2545]/70 p-3 space-y-2">
                             <div class="flex items-start justify-between gap-2">
                                 <div>
-                                    <span class="text-[10px] font-bold text-indigo-300 uppercase">${e.type} ${e.is_recurring ? '(Recurrente 🔄)' : ''}</span>
+                                    <span class="text-[10px] font-extrabold text-[#00A896] uppercase">${e.type} ${e.is_recurring ? '🔄' : ''}</span>
                                     <h4 class="text-xs font-bold text-white">${e.title}</h4>
                                     <p class="text-[11px] text-slate-300 mt-0.5">${e.description || 'Sin descripción'}</p>
                                     <p class="text-[10px] text-slate-400 mt-1">Horario: ${getEventLocalTimeStr(e.start_at)} ${e.end_at ? '- ' + getEventLocalTimeStr(e.end_at) : ''}</p>
                                 </div>
-                                <span class="h-3 w-3 rounded-full shrink-0" style="background-color: ${e.color}"></span>
+                                <span class="h-3.5 w-3.5 rounded-full shrink-0 border border-white/20 shadow-sm" style="background-color: ${e.color}"></span>
                             </div>
 
-                            <div class="flex items-center justify-between text-xs border-t border-white/5 pt-2">
-                                <span class="text-[10px] text-slate-400">Estado: <strong>${e.status}</strong></span>
+                            <div class="flex items-center justify-between text-xs border-t border-white/10 pt-2">
+                                <span class="text-[10px] text-slate-300">Estado: <strong class="text-white">${e.status}</strong></span>
                                 <div class="flex gap-2">
-                                    <button onclick="openEditModal(${e.id})" class="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-semibold">✏️ Editar</button>
-                                    <button onclick="promptDeleteEvent(${e.id})" class="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-500 text-white text-[10px] font-semibold">🗑️ Eliminar</button>
+                                    <button onclick="openEditModal(${e.id})" class="px-2.5 py-1 rounded-lg bg-[#00A896] hover:bg-[#028090] text-slate-950 hover:text-white text-[10px] font-bold transition">✏️ Editar</button>
+                                    <button onclick="promptDeleteEvent(${e.id})" class="px-2.5 py-1 rounded-lg bg-red-600 hover:bg-red-500 text-white text-[10px] font-bold transition">🗑️ Eliminar</button>
                                 </div>
                             </div>
                         </div>
@@ -893,7 +1133,7 @@
             pendingDeleteEventId = null;
         }
 
-        // ELIMINA SOLO ESTA OCURRENCIA ESPECÍFICA (RF-06)
+        // ELIMINA SOLO ESTA FECHA
         async function confirmDeleteRecurringInstance() {
             if (!pendingDeleteEventId || !selectedDayDateStr) return;
             const id = pendingDeleteEventId;
@@ -916,11 +1156,12 @@
                     closeDayViewModal();
                     await fetchTodayTasks();
                     await applyFilters();
+                    showToast('Fecha eliminada correctamente.', 'info');
                 }
             } catch (err) { console.error(err); }
         }
 
-        // ELIMINA EVENTO COMPLETO / SERIE
+        // ELIMINA SERIE COMPLETA
         async function confirmDeleteRecurringSeries() {
             if (!pendingDeleteEventId) return;
             const id = pendingDeleteEventId;
@@ -942,11 +1183,12 @@
                     closeDayViewModal();
                     await fetchTodayTasks();
                     await applyFilters();
+                    showToast('Evento movido a la papelera.', 'warning');
                 }
             } catch (err) { console.error(err); }
         }
 
-        // EDITAR EVENTO (RF-05)
+        // EDITAR EVENTO
         function openEditModal(eventId) {
             closeDayViewModal();
             const event = currentEvents.find(e => e.id === eventId);
@@ -957,7 +1199,7 @@
             document.getElementById('evtTitle').value = event.title || '';
             document.getElementById('evtDescription').value = event.description || '';
             document.getElementById('evtType').value = event.type || 'tarea';
-            document.getElementById('evtColor').value = event.color || '#3B82F6';
+            document.getElementById('evtColor').value = event.color || '#00A896';
             
             document.getElementById('evtStartAt').value = event.start_at ? event.start_at.replace(' ', 'T').slice(0, 16) : getLocalDateTimeString(0);
             document.getElementById('evtEndAt').value = event.end_at ? event.end_at.replace(' ', 'T').slice(0, 16) : '';
@@ -972,11 +1214,11 @@
 
         function openCreateModal(customDate = null) {
             document.getElementById('editingEventId').value = '';
-            document.getElementById('eventFormModalTitle').innerText = 'Configurar Evento (RF-04, RF-05)';
+            document.getElementById('eventFormModalTitle').innerText = 'Nuevo Evento / Tarea';
             document.getElementById('evtTitle').value = '';
             document.getElementById('evtDescription').value = '';
             document.getElementById('evtType').value = 'tarea';
-            document.getElementById('evtColor').value = '#3B82F6';
+            document.getElementById('evtColor').value = '#00A896';
             document.getElementById('evtIsRecurring').checked = false;
             document.getElementById('evtRecurrenceFreq').value = 'diaria';
             document.getElementById('evtReminderMinutes').value = '15';
@@ -1017,6 +1259,7 @@
                 if (data.success) {
                     await fetchTodayTasks();
                     await applyFilters();
+                    showToast(`Estado cambiado a: ${status}`, 'success');
                 }
             } catch (err) { console.error(err); }
         }
@@ -1029,7 +1272,6 @@
 
             const editingId = document.getElementById('editingEventId').value;
             const isRecurring = document.getElementById('evtIsRecurring').checked;
-            const endAtVal = document.getElementById('evtEndAt').value;
             const reminderVal = document.getElementById('evtReminderMinutes').value;
 
             const rawStartAt = document.getElementById('evtStartAt').value;
@@ -1078,6 +1320,7 @@
                     closeCreateModal();
                     await fetchTodayTasks();
                     await applyFilters();
+                    showToast(editingId ? 'Evento actualizado correctamente' : 'Evento guardado exitosamente', 'success');
                 } else {
                     let msg = data.message || 'Error de validación.';
                     if (data.data && data.data.errors) {
@@ -1092,7 +1335,7 @@
             }
         }
 
-        // RF-11: PAPELERA DE RECICLAJE Y PURGA
+        // PAPELERA DE RECICLAJE Y PURGA
         function openTrashModal() {
             document.getElementById('trashModal').classList.remove('hidden');
             fetchTrashEvents();
@@ -1119,15 +1362,15 @@
                     }
 
                     list.innerHTML = events.map(e => `
-                        <div class="rounded-xl border border-white/10 bg-[#1e293b] p-3 flex items-center justify-between gap-3">
+                        <div class="rounded-xl border border-white/10 bg-[#0B2545]/70 p-3.5 flex items-center justify-between gap-3 shadow-md">
                             <div>
-                                <span class="text-[10px] font-bold text-amber-400 uppercase">${e.type}</span>
+                                <span class="text-[10px] font-bold text-[#00A896] uppercase">${e.type}</span>
                                 <h4 class="text-xs font-bold text-white">${e.title}</h4>
-                                <p class="text-[10px] text-slate-400">Eliminado: ${new Date(e.deleted_at).toLocaleString()}</p>
+                                <p class="text-[10px] text-slate-400 mt-0.5">Eliminado el ${formatDateEC(e.deleted_at)}</p>
                             </div>
                             <div class="flex items-center gap-2">
-                                <button onclick="restoreTrashedEvent(${e.id})" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-semibold">♻️ Restaurar</button>
-                                <button onclick="forceDeleteTrashedEvent(${e.id})" class="px-2.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-[10px] font-semibold">🔥 Definitivo</button>
+                                <button onclick="restoreTrashedEvent(${e.id})" class="px-3 py-1.5 rounded-xl bg-[#00A896] hover:bg-[#028090] text-slate-950 hover:text-white font-extrabold text-xs transition shadow-sm">♻️ Restaurar</button>
+                                <button onclick="forceDeleteTrashedEvent(${e.id})" class="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition shadow-sm">Eliminar</button>
                             </div>
                         </div>
                     `).join('');
@@ -1152,6 +1395,7 @@
                     await fetchTrashEvents();
                     await fetchTodayTasks();
                     await applyFilters();
+                    showToast('Evento restaurado de la papelera.', 'success');
                 }
             } catch (err) { console.error(err); }
         }
@@ -1168,11 +1412,12 @@
                 const data = await res.json();
                 if (data.success) {
                     await fetchTrashEvents();
+                    showToast('Evento eliminado permanentemente.', 'info');
                 }
             } catch (err) { console.error(err); }
         }
 
-        // RF-03: SOLICITUD DE BORRADO DE CUENTA CON CÓDIGO DE VERIFICACIÓN Y COOLDOWN DE 5 MIN
+        // SOLICITUD DE BORRADO DE CUENTA
         let delCodeTimer = null;
 
         function checkDelCodeCooldown() {
@@ -1213,6 +1458,12 @@
         }
 
         function openDeleteAccountModal() { 
+            const delPass = document.getElementById('deletePasswordInput');
+            if (delPass) delPass.value = '';
+            const delCode = document.getElementById('deleteCodeInput');
+            if (delCode) delCode.value = '';
+            const delErr = document.getElementById('deleteAccountError');
+            if (delErr) { delErr.innerText = ''; delErr.classList.add('hidden'); }
             document.getElementById('deleteAccountModal').classList.remove('hidden'); 
             checkDelCodeCooldown();
         }
@@ -1248,6 +1499,7 @@
                     const cooldownUntil = Date.now() + (5 * 60 * 1000);
                     localStorage.setItem('del_code_cooldown', cooldownUntil);
                     checkDelCodeCooldown();
+                    showToast('Código de verificación enviado a tu correo.', 'info');
                 } else {
                     errDiv.innerText = data.message || 'Error al enviar código.';
                     errDiv.classList.remove('hidden');
@@ -1277,10 +1529,11 @@
                 const data = await res.json();
                 if (data.success) {
                     closeDeleteAccountModal();
-                    alert('Cuenta eliminada de forma permanente.');
+                    showToast('Cuenta eliminada de forma permanente.', 'info');
                     localStorage.clear();
                     token = null;
                     user = null;
+                    clearAuthForms();
                     switchAuthTab('login');
                     document.getElementById('authModal').classList.remove('hidden');
                     checkAuth();
