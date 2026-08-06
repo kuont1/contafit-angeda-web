@@ -20,10 +20,10 @@ class AuthController extends Controller
     public function register(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'first_name' => ['required', 'string', 'max:100'],
-            'middle_name' => ['nullable', 'string', 'max:100'],
-            'last_name' => ['required', 'string', 'max:100'],
-            'second_last_name' => ['nullable', 'string', 'max:100'],
+            'first_name' => ['required', 'string', 'max:100', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\'-]+$/u'],
+            'middle_name' => ['nullable', 'string', 'max:100', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\'-]+$/u'],
+            'last_name' => ['required', 'string', 'max:100', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\'-]+$/u'],
+            'second_last_name' => ['nullable', 'string', 'max:100', 'regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\'-]+$/u'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => [
                 'required',
@@ -35,6 +35,23 @@ class AuthController extends Controller
                     ->numbers()
                     ->symbols(),
             ],
+        ], [
+            'first_name.required' => 'El primer nombre es obligatorio.',
+            'first_name.regex' => 'El primer nombre solo debe contener letras, no se permiten números.',
+            'middle_name.regex' => 'El segundo nombre solo debe contener letras, no se permiten números.',
+            'last_name.required' => 'El primer apellido es obligatorio.',
+            'last_name.regex' => 'El primer apellido solo debe contener letras, no se permiten números.',
+            'second_last_name.regex' => 'El segundo apellido solo debe contener letras, no se permiten números.',
+            'email.required' => 'El correo electrónico es obligatorio.',
+            'email.email' => 'Debes ingresar una dirección de correo electrónico válida (ej: usuario@ejemplo.com).',
+            'email.unique' => 'Este correo electrónico ya está registrado en el sistema. Intenta iniciar sesión.',
+            'password.required' => 'La contraseña es obligatoria.',
+            'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
+            'password.letters' => 'La contraseña debe incluir al menos una letra.',
+            'password.mixed_case' => 'La contraseña debe incluir letras mayúsculas y minúsculas.',
+            'password.numbers' => 'La contraseña debe incluir al menos un número (0-9).',
+            'password.symbols' => 'La contraseña debe incluir al menos un símbolo especial (!@#$%^&*).',
+            'password.confirmed' => 'La confirmación de la contraseña no coincide.',
         ]);
 
         if ($validator->fails()) {
@@ -121,6 +138,10 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
+        ], [
+            'email.required' => 'Por favor ingresa tu correo electrónico.',
+            'email.email' => 'El correo electrónico ingresado no tiene un formato válido (ejemplo: usuario@dominio.com).',
+            'password.required' => 'Por favor ingresa tu contraseña.',
         ]);
 
         if ($validator->fails()) {
@@ -130,7 +151,7 @@ class AuthController extends Controller
         $user = User::where('email', $request->input('email'))->first();
 
         if (! $user || ! Hash::check($request->input('password'), $user->password)) {
-            return $this->errorResponse('Credenciales inválidas.', null, 401);
+            return $this->errorResponse('Credenciales inválidas. Verifica tu correo y contraseña.', null, 401);
         }
 
         $jwtToken = JwtService::generateToken($user);

@@ -6,11 +6,15 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1
 
 ---
 
-## [Unreleased]
-### Planificado para [v1.1.0]
-- Rediseño de interfaz de usuario según la línea gráfica corporativa de Contafit.
-- Renovación del selector de colores para categorización de eventos.
-- Localización del formato de visualización de fechas al estándar ecuatoriano (`dd/mm/yyyy` / UTC-5).
+## [1.1.0] - 2026-08-06
+### Añadido y Mejorado
+- **Navegación Inteligente y Búsqueda Case-Insensitive:** La búsqueda en el calendario ya no distingue entre mayúsculas y minúsculas (`LOWER(title)` / `LOWER(description)`). Auto-navegación automática al mes/año de la fecha encontrada y resaltado visual con la insignia `ENCONTRADO`.
+- **Despliegue Dinámico de Requisitos de Contraseña:** El panel de requisitos de seguridad de contraseña ahora se oculta por defecto y aparece dinámicamente al escribir o al presionar Enter/validar, indicando requisitos cumplidos (`✓`) y pendientes (`❌`).
+- **Validación Estricta de Nombres y Apellidos:** Restricción de tipeo de números y caracteres especiales en nombres y apellidos en frontend (`oninput`) y backend (`regex`). Mensajes de error formateados en español claro.
+- **Favicon Corporativo Contafit:** Adición de isotipo SVG corporativo en el `<head>` del sitio.
+- **Pruebas de Carga K6:** Suite de pruebas de rendimiento con 400 solicitudes en 4 endpoints críticos (`/api/login`, `/api/events`, `/api/holidays`, `/api/dashboard/today`), logrando **100% de éxito (0.00% errores)** y latencia promedio de 270 ms - 350 ms en lecturas.
+- **Evaluación de Usabilidad SUS/SEQ:** Aplicación de matriz ISO 9241-11 con 10 evaluadores, obteniendo un puntaje global **SUS de 69.75 / 100 (Aceptable / Grado B+)** y 90% de efectividad.
+- **Pruebas Automatizadas:** Cobertura ampliada a **34/34 pruebas en PHPUnit (100% de éxito)**.
 
 ---
 

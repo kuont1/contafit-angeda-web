@@ -24,12 +24,12 @@ class EventController extends Controller
 
         $query = Event::where('user_id', $request->user()->id);
 
-        // Búsqueda por palabra clave en title o description (LIKE / ILIKE)
+        // Búsqueda insensible a mayúsculas/minúsculas por palabra clave en title o description
         if ($request->filled('search')) {
-            $search = $request->query('search');
+            $search = mb_strtolower(trim((string) $request->query('search')), 'UTF-8');
             $query->where(function ($q) use ($search) {
-                $q->where('title', 'LIKE', "%{$search}%")
-                    ->orWhere('description', 'LIKE', "%{$search}%");
+                $q->whereRaw('LOWER(title) LIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('LOWER(description) LIKE ?', ["%{$search}%"]);
             });
         }
 

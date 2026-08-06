@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ config('app.name', 'ContaFit Agenda') }} | Agenda Corporativa</title>
 
+    <!-- ÍCONO EN LA PESTAÑA DEL NAVEGADOR (FAVICON ISOTIPO CONTAFIT) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='42' fill='none' stroke='%2300A896' stroke-width='8'/><rect x='34' y='45' width='8' height='25' fill='%2300A896' rx='2'/><rect x='46' y='35' width='8' height='35' fill='%2300A896' rx='2'/><rect x='58' y='48' width='8' height='22' fill='%2300A896' rx='2'/><path d='M 22 65 L 42 45 L 55 56 L 78 26 L 62 26 L 78 26 L 78 42' fill='none' stroke='%230B2545' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+
     <!-- FUENTES OFICIALES (SANS-SERIF MODERNA CORPORATIVA) -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700,800&display=swap" rel="stylesheet" />
@@ -282,34 +285,45 @@
                 <div class="grid grid-cols-2 gap-2">
                     <div>
                         <label class="block text-xs text-slate-300 mb-1">Primer Nombre *</label>
-                        <input type="text" id="regFirstName" required placeholder="Juan" autocomplete="off" class="w-full rounded-xl border border-white/10 bg-[#0B1320] p-2.5 text-xs text-white focus:outline-none">
+                        <input type="text" id="regFirstName" required placeholder="Juan" autocomplete="off" oninput="this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s'-]/g, '')" class="w-full rounded-xl border border-white/10 bg-[#0B1320] p-2.5 text-xs text-white focus:outline-none focus:border-[#00A896]">
                     </div>
                     <div>
                         <label class="block text-xs text-slate-300 mb-1">Segundo Nombre</label>
-                        <input type="text" id="regMiddleName" placeholder="Carlos" autocomplete="off" class="w-full rounded-xl border border-white/10 bg-[#0B1320] p-2.5 text-xs text-white focus:outline-none">
+                        <input type="text" id="regMiddleName" placeholder="Carlos" autocomplete="off" oninput="this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s'-]/g, '')" class="w-full rounded-xl border border-white/10 bg-[#0B1320] p-2.5 text-xs text-white focus:outline-none focus:border-[#00A896]">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
                         <label class="block text-xs text-slate-300 mb-1">Primer Apellido *</label>
-                        <input type="text" id="regLastName" required placeholder="Pérez" autocomplete="off" class="w-full rounded-xl border border-white/10 bg-[#0B1320] p-2.5 text-xs text-white focus:outline-none">
+                        <input type="text" id="regLastName" required placeholder="Pérez" autocomplete="off" oninput="this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s'-]/g, '')" class="w-full rounded-xl border border-white/10 bg-[#0B1320] p-2.5 text-xs text-white focus:outline-none focus:border-[#00A896]">
                     </div>
                     <div>
                         <label class="block text-xs text-slate-300 mb-1">Segundo Apellido</label>
-                        <input type="text" id="regSecondLastName" placeholder="Gómez" autocomplete="off" class="w-full rounded-xl border border-white/10 bg-[#0B1320] p-2.5 text-xs text-white focus:outline-none">
+                        <input type="text" id="regSecondLastName" placeholder="Gómez" autocomplete="off" oninput="this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s'-]/g, '')" class="w-full rounded-xl border border-white/10 bg-[#0B1320] p-2.5 text-xs text-white focus:outline-none focus:border-[#00A896]">
                     </div>
                 </div>
                 <div>
                     <label class="block text-xs text-slate-300 mb-1">Correo Electrónico *</label>
-                    <input type="email" id="regEmail" required placeholder="tuemail@ejemplo.com" autocomplete="off" class="w-full rounded-xl border border-white/10 bg-[#0B1320] p-2.5 text-xs text-white focus:outline-none">
+                    <input type="email" id="regEmail" required placeholder="tuemail@ejemplo.com" autocomplete="off" class="w-full rounded-xl border border-white/10 bg-[#0B1320] p-2.5 text-xs text-white focus:outline-none focus:border-[#00A896]">
                 </div>
                 <div>
                     <label class="block text-xs text-slate-300 mb-1">Contraseña Segura *</label>
-                    <input type="password" id="regPassword" required placeholder="••••••••" autocomplete="new-password" class="w-full rounded-xl border border-white/10 bg-[#0B1320] p-2.5 text-xs text-white focus:outline-none">
+                    <input type="password" id="regPassword" required placeholder="••••••••" autocomplete="new-password" oninput="checkPasswordRequirements(this.value)" class="w-full rounded-xl border border-white/10 bg-[#0B1320] p-2.5 text-xs text-white focus:outline-none focus:border-[#00A896]">
+                    
+                    <!-- REQUISITOS DE CONTRASEÑA EN TIEMPO REAL (SOLO SE MUESTRA AL ESCRIBIR O SI HAY ERRORES) -->
+                    <div id="passwordRequirements" class="mt-1.5 p-2.5 rounded-xl bg-[#0B2545]/90 border border-[#00A896]/40 text-[11px] space-y-1 text-slate-300 hidden">
+                        <p class="font-bold text-[#00A896] text-[11px] mb-1">🔒 La contraseña debe incluir:</p>
+                        <div class="grid grid-cols-2 gap-x-2 gap-y-1">
+                            <div id="reqMinLen" class="flex items-center gap-1.5 text-slate-400 font-medium"><span>⚪</span> Mínimo 8 caracteres</div>
+                            <div id="reqLetters" class="flex items-center gap-1.5 text-slate-400 font-medium"><span>⚪</span> Mayúsculas y minúsculas</div>
+                            <div id="reqNumbers" class="flex items-center gap-1.5 text-slate-400 font-medium"><span>⚪</span> Al menos 1 número (0-9)</div>
+                            <div id="reqSymbols" class="flex items-center gap-1.5 text-slate-400 font-medium"><span>⚪</span> 1 símbolo (!@#$%^&*)</div>
+                        </div>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-xs text-slate-300 mb-1">Confirmar Contraseña *</label>
-                    <input type="password" id="regPasswordConfirm" required placeholder="••••••••" autocomplete="new-password" class="w-full rounded-xl border border-white/10 bg-[#0B1320] p-2.5 text-xs text-white focus:outline-none">
+                    <input type="password" id="regPasswordConfirm" required placeholder="••••••••" autocomplete="new-password" class="w-full rounded-xl border border-white/10 bg-[#0B1320] p-2.5 text-xs text-white focus:outline-none focus:border-[#00A896]">
                 </div>
                 <div id="regError" class="text-xs text-red-400 hidden"></div>
                 <button type="submit" class="w-full py-3 rounded-xl bg-[#00A896] hover:bg-[#028090] font-bold text-slate-950 hover:text-white text-xs transition shadow-lg">Crear Cuenta</button>
@@ -487,6 +501,47 @@
         let selectedDayDateStr = null;
         let pendingDeleteEventId = null;
 
+        // VALIDACIÓN INTERACTIVA DE REQUISITOS DE CONTRASEÑA EN TIEMPO REAL (DESPLIEGUE DINÁMICO)
+        function checkPasswordRequirements(val, forceShow = false) {
+            const box = document.getElementById('passwordRequirements');
+            if (!box) return;
+
+            if (!val || val.trim() === '') {
+                if (forceShow) {
+                    box.classList.remove('hidden');
+                } else {
+                    box.classList.add('hidden');
+                    return;
+                }
+            } else {
+                box.classList.remove('hidden');
+            }
+
+            const minLen = val.length >= 8;
+            const hasUpper = /[A-Z]/.test(val);
+            const hasLower = /[a-z]/.test(val);
+            const hasLetters = hasUpper && hasLower;
+            const hasNumbers = /[0-9]/.test(val);
+            const hasSymbols = /[^a-zA-Z0-9]/.test(val);
+
+            updateReqItem('reqMinLen', minLen, 'Mínimo 8 caracteres');
+            updateReqItem('reqLetters', hasLetters, 'Mayúsculas y minúsculas');
+            updateReqItem('reqNumbers', hasNumbers, 'Al menos 1 número (0-9)');
+            updateReqItem('reqSymbols', hasSymbols, '1 símbolo (!@#$%^&*)');
+        }
+
+        function updateReqItem(id, isMet, text) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (isMet) {
+                el.className = 'flex items-center gap-1.5 text-emerald-400 font-bold';
+                el.innerHTML = `<span class="text-emerald-400 font-black">✓</span> ${text}`;
+            } else {
+                el.className = 'flex items-center gap-1.5 text-red-300 font-medium';
+                el.innerHTML = `<span class="text-red-400 font-bold">❌</span> ${text}`;
+            }
+        }
+
         // LIMPIEZA DE SEGURIDAD EN CAMPOS DE AUTENTICACIÓN Y FORMULARIOS
         function clearAuthForms() {
             const loginForm = document.getElementById('loginForm');
@@ -494,6 +549,7 @@
 
             const registerForm = document.getElementById('registerForm');
             if (registerForm) registerForm.reset();
+            checkPasswordRequirements('');
 
             const loginErr = document.getElementById('loginError');
             if (loginErr) { loginErr.innerText = ''; loginErr.classList.add('hidden'); }
@@ -737,11 +793,16 @@
                     checkAuth();
                     showToast(`¡Bienvenido a ContaFit, ${user.name}!`, 'success');
                 } else {
-                    errDiv.innerText = data.message || 'Credenciales inválidas.';
+                    if (data.data?.errors) {
+                        const errorItems = Object.values(data.data.errors).flat().map(err => `<li class="flex items-start gap-1.5"><span class="text-red-400 font-bold">⚠️</span> <span>${err}</span></li>`).join('');
+                        errDiv.innerHTML = `<div class="p-3 rounded-xl bg-red-950/70 border border-red-500/40 text-red-200 text-xs space-y-1"><p class="font-bold text-red-300">No se pudo iniciar sesión:</p><ul class="space-y-1 mt-1">${errorItems}</ul></div>`;
+                    } else {
+                        errDiv.innerHTML = `<div class="p-3 rounded-xl bg-red-950/70 border border-red-500/40 text-red-200 text-xs flex items-center gap-2"><span class="text-base">⚠️</span> <span>${data.message || 'Credenciales inválidas. Verifica tu correo y contraseña.'}</span></div>`;
+                    }
                     errDiv.classList.remove('hidden');
                 }
             } catch (err) {
-                errDiv.innerText = 'Error de conexión.';
+                errDiv.innerHTML = `<div class="p-3 rounded-xl bg-red-950/70 border border-red-500/40 text-red-200 text-xs flex items-center gap-2"><span class="text-base">📡</span> <span>Error de conexión. Intenta nuevamente.</span></div>`;
                 errDiv.classList.remove('hidden');
             }
         }
@@ -777,12 +838,17 @@
                     checkAuth();
                     showToast(`¡Cuenta creada exitosamente! Bienvenido, ${user.name}`, 'success');
                 } else {
-                    const msg = data.data?.errors ? Object.values(data.data.errors).flat().join('<br>') : (data.message || 'Error al registrar.');
-                    errDiv.innerHTML = msg;
+                    checkPasswordRequirements(document.getElementById('regPassword').value, true);
+                    if (data.data?.errors) {
+                        const errorItems = Object.values(data.data.errors).flat().map(err => `<li class="flex items-start gap-1.5"><span class="text-red-400 font-bold">⚠️</span> <span>${err}</span></li>`).join('');
+                        errDiv.innerHTML = `<div class="p-3 rounded-xl bg-red-950/70 border border-red-500/40 text-red-200 text-xs space-y-1"><p class="font-bold text-red-300">Por favor corrige los siguientes datos:</p><ul class="space-y-1 mt-1">${errorItems}</ul></div>`;
+                    } else {
+                        errDiv.innerHTML = `<div class="p-3 rounded-xl bg-red-950/70 border border-red-500/40 text-red-200 text-xs flex items-center gap-2"><span class="text-base">⚠️</span> <span>${data.message || 'No se pudo crear la cuenta.'}</span></div>`;
+                    }
                     errDiv.classList.remove('hidden');
                 }
             } catch (err) {
-                errDiv.innerText = 'Error de conexión.';
+                errDiv.innerHTML = `<div class="p-3 rounded-xl bg-red-950/70 border border-red-500/40 text-red-200 text-xs flex items-center gap-2"><span class="text-base">📡</span> <span>Error de conexión. Intenta nuevamente.</span></div>`;
                 errDiv.classList.remove('hidden');
             }
         }
@@ -946,6 +1012,27 @@
                 const data = await res.json();
                 if (data.success) {
                     currentEvents = data.data.events || [];
+
+                    // Si hay un término de búsqueda o filtro activo y existen eventos encontrados,
+                    // navegar automáticamente al año y mes del primer evento coincidente
+                    const hasActiveFilter = (search && search.trim() !== '') || type !== '' || status !== '';
+                    if (hasActiveFilter && currentEvents.length > 0) {
+                        const firstMatch = currentEvents[0];
+                        const matchDateStr = getEventLocalDateStr(firstMatch.start_at);
+                        if (matchDateStr && matchDateStr.length >= 10) {
+                            const parts = matchDateStr.slice(0, 10).split('-');
+                            if (parts.length === 3) {
+                                const targetYear = parseInt(parts[0]);
+                                const targetMonth = parseInt(parts[1]) - 1;
+
+                                if (currentDate.getFullYear() !== targetYear || currentDate.getMonth() !== targetMonth) {
+                                    currentDate = new Date(targetYear, targetMonth, 1);
+                                    await fetchHolidays();
+                                }
+                            }
+                        }
+                    }
+
                     renderCalendar();
                 }
             } catch (err) { console.error(err); }
@@ -995,8 +1082,9 @@
 
             const evalDate = new Date(dateStr + 'T00:00:00');
             const startDate = new Date(eventStart + 'T00:00:00');
+            const freq = e.recurrence_frequency || e.recurrence_type || e.recurrence;
 
-            switch (e.recurrence_frequency) {
+            switch (freq) {
                 case 'diaria': return true;
                 case 'semanal': return evalDate.getDay() === startDate.getDay();
                 case 'mensual': return evalDate.getDate() === startDate.getDate();
@@ -1008,6 +1096,7 @@
         function renderCalendar() {
             const grid = document.getElementById('calendarGrid');
             const title = document.getElementById('calendarTitle');
+            const searchVal = document.getElementById('searchInput')?.value.trim() || '';
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
 
@@ -1033,11 +1122,20 @@
                 const dayEvents = currentEvents.filter(e => eventMatchesDate(e, dateKey));
                 const dayHolidays = currentHolidays.filter(h => h.date.startsWith(dateKey));
 
+                const isMatchDay = searchVal !== '' && dayEvents.length > 0;
+
+                let cardStyle = 'bg-[#1E293B]/60 hover:bg-[#1E293B]';
+                if (isToday) {
+                    cardStyle = 'ring-2 ring-[#00A896] bg-[#0B2545]/80 shadow-md shadow-[#00A896]/20';
+                } else if (isMatchDay) {
+                    cardStyle = 'ring-2 ring-[#00A896] bg-[#00A896]/15 shadow-lg shadow-[#00A896]/30';
+                }
+
                 cellsHTML += `
-                    <div onclick="openDayViewModal('${dateKey}')" class="relative flex min-h-[95px] flex-col overflow-hidden rounded-2xl border border-white/10 p-2.5 text-white cursor-pointer hover:border-[#00A896] transition-all ${isToday ? 'ring-2 ring-[#00A896] bg-[#0B2545]/80 shadow-md shadow-[#00A896]/20' : 'bg-[#1E293B]/60 hover:bg-[#1E293B]'}" title="Ver eventos para la fecha ${formatDateEC(dateKey)}">
+                    <div onclick="openDayViewModal('${dateKey}')" class="relative flex min-h-[95px] flex-col overflow-hidden rounded-2xl border border-white/10 p-2.5 text-white cursor-pointer hover:border-[#00A896] transition-all ${cardStyle}" title="Ver eventos para la fecha ${formatDateEC(dateKey)}">
                         <div class="flex items-start justify-between">
-                            <span class="text-xs font-bold ${isToday ? 'text-[#00A896]' : 'text-slate-200'}">${day}</span>
-                            ${isToday ? `<span class="rounded bg-[#00A896] px-1.5 py-0.2 text-[8px] font-extrabold text-slate-950">HOY</span>` : ''}
+                            <span class="text-xs font-bold ${isToday ? 'text-[#00A896]' : (isMatchDay ? 'text-[#00A896]' : 'text-slate-200')}">${day}</span>
+                            ${isToday ? `<span class="rounded bg-[#00A896] px-1.5 py-0.2 text-[8px] font-extrabold text-slate-950">HOY</span>` : (isMatchDay ? `<span class="rounded bg-[#00A896] px-1.5 py-0.2 text-[8px] font-extrabold text-slate-950">ENCONTRADO</span>` : '')}
                         </div>
 
                         <div class="mt-1 space-y-1 overflow-y-auto max-h-[65px]">

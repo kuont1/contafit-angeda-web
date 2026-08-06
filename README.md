@@ -7,8 +7,8 @@
     <img src="https://img.shields.io/badge/Laravel-12.0-FF2D20?style=for-the-badge&logo=laravel&logoColor=white" alt="Laravel 12">
     <img src="https://img.shields.io/badge/PostgreSQL-15.0-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL">
     <img src="https://img.shields.io/badge/JWT-RFC_7519-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white" alt="JWT Auth">
-    <img src="https://img.shields.io/badge/PHPUnit-100%25_Pass-2496ED?style=for-the-badge&logo=php&logoColor=white" alt="PHPUnit Pass">
-    <img src="https://img.shields.io/badge/Release-v1.0.0--Stable-success?style=for-the-badge" alt="v1.0.0 Stable">
+    <img src="https://img.shields.io/badge/PHPUnit-34%2F34_Pass-2496ED?style=for-the-badge&logo=php&logoColor=white" alt="PHPUnit Pass">
+    <img src="https://img.shields.io/badge/Release-v1.1.0--Stable-success?style=for-the-badge" alt="v1.1.0 Stable">
   </p>
 </p>
 

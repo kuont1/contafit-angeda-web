@@ -109,6 +109,21 @@ class AuthTest extends TestCase
 
         $response->assertStatus(401)
             ->assertJsonPath('success', false)
-            ->assertJsonPath('message', 'Credenciales inválidas.');
+            ->assertJsonPath('message', 'Credenciales inválidas. Verifica tu correo y contraseña.');
+    }
+
+    public function test_register_rejects_numbers_in_names(): void
+    {
+        $response = $this->postJson('/api/register', [
+            'first_name' => 'Juan123',
+            'last_name' => 'Perez456',
+            'email' => 'con_numeros@example.com',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('data.errors.first_name.0', 'El primer nombre solo debe contener letras, no se permiten números.');
     }
 }
